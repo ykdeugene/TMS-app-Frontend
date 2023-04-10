@@ -16,9 +16,9 @@ function NavBarLoggedIn() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [username, setUsername] = useState("")
 
-  async function checkGroup(group) {
+  async function checkGroup(group_name) {
     try {
-      const response = await Axios.post(`/group/checkGroup`, { group })
+      const response = await Axios.post(`/group/checkGroup`, { group_name })
       setIsAdmin(response.data)
     } catch (e) {
       console.log(e)

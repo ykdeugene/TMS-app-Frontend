@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react"
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import { useImmerReducer } from "use-immer"
 import Axios from "axios"
-import { useNavigate } from "react-router-dom"
 // Importing Contexts
 import StateContext from "./StateContext"
 import DispatchContext from "./DispatchContext"
@@ -12,7 +11,7 @@ import LoginPage from "./Components/LoginPage"
 import TMSMain from "./Components/TMSMain"
 import EditPage from "./Components/EditPage"
 import ErrorPage from "./Components/ErrorPage"
-// import EditPage from "./Components/EditPage"
+import UserManagement from "./Components/UserManagement/UserManagement"
 // Importing toast for notifications
 import { ToastContainer, toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
@@ -68,9 +67,9 @@ function App() {
 
   const [isAdmin, setIsAdmin] = useState(false)
 
-  async function checkGroup(group) {
+  async function checkGroup(group_name) {
     try {
-      const response = await Axios.post(`/group/checkGroup`, { group })
+      const response = await Axios.post(`/group/checkGroup`, { group_name })
       setIsAdmin(response.data)
     } catch (e) {
       console.log(e)
@@ -81,7 +80,7 @@ function App() {
   const [state, dispatch] = useImmerReducer(ourReducer, initialState)
 
   useEffect(() => {
-    checkGroup("admin")
+    checkGroup("Admin")
     if (state.loggedIn) {
       localStorage.setItem("token", state.token)
       verifyUser()
@@ -99,8 +98,7 @@ function App() {
           <Routes>
             <Route path="/" element={state.loggedIn ? <TMSMain /> : <LoginPage />} />
             <Route path="/edit" element={state.loggedIn ? <EditPage /> : <LoginPage />} />
-            <Route path="/main" element={state.loggedIn && isAdmin ? <EditPage /> : <ErrorPage />} />
-            <Route path="/error" element={<ErrorPage />} />
+            <Route path="/main" element={state.loggedIn ? isAdmin ? <UserManagement /> : <ErrorPage /> : <LoginPage />} />
           </Routes>
           <ToastContainer position="bottom-right" autoClose={1250} />
         </BrowserRouter>

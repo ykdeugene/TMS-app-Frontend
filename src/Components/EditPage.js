@@ -17,7 +17,6 @@ function EditPage() {
       const response = await Axios.get(`/user/getusername`)
       setUsername(response.data.username)
     } catch (e) {
-      console.log(e)
       appDispatch({ type: "errorToast", data: "Please contact an administrator." })
     }
   }
@@ -27,6 +26,11 @@ function EditPage() {
     const response = await Axios.get("/group/user")
     setGroups(response.data)
   }
+
+  useEffect(() => {
+    getUsername()
+    fetchGroups()
+  }, [])
 
   // function to update user's password
   async function updatePassword() {
@@ -73,11 +77,6 @@ function EditPage() {
       setEmail("")
     }
   }
-
-  useEffect(() => {
-    getUsername()
-    fetchGroups()
-  }, [])
 
   return (
     <div className="d-flex align-items-center justify-content-center" style={{ height: "50vh" }}>

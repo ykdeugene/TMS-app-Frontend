@@ -1,8 +1,10 @@
 import React, { useState, useContext } from "react"
 import Axios from "axios"
+import { useNavigate } from "react-router-dom"
 import DispatchContext from "../DispatchContext"
 
 function LoginPage() {
+  const navigate = useNavigate()
   const unacceptable = [undefined, ""]
   const appDispatch = useContext(DispatchContext)
   const [username, setUsername] = useState()
@@ -18,6 +20,8 @@ function LoginPage() {
         const response = await Axios.post("user/login", { username, password })
         if (response.data) {
           appDispatch({ type: "loggedIn", data: response.data })
+          appDispatch({ type: "successToast", data: "Welcome." })
+          navigate("/")
         } else {
           appDispatch({ type: "errorToast", data: "Invalid Username/Password." })
         }
