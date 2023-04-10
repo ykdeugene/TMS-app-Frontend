@@ -13,10 +13,15 @@ function CreateGroup({ setUserTable }) {
       try {
         const new_group = c_groupname.trim()
         const response = await Axios.post("/group/create_group_admin", { new_group })
-        if (response.data) {
+        if (response.data === true) {
           appDispatch({ type: "successToast", data: "New group is created." })
           setc_groupname("")
           setUserTable()
+        } else if (response.data === "A100") {
+          appDispatch({ type: "loggedOut" })
+          appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
+        } else {
+          appDispatch({ type: "errorToast", data: "Group not created. Please check for duplicate group name." })
         }
       } catch (e) {
         appDispatch({ type: "errorToast", data: "Group is not created. Check for duplicate group name." })

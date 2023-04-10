@@ -22,14 +22,17 @@ function CreateUsers({ setUserTable }) {
       try {
         const response = await Axios.post("/user/create_user_admin", { c_username, c_password, c_email })
         console.log(response.data)
-        if (response.data) {
+        if (response.data === true) {
           appDispatch({ type: "successToast", data: "New user is created." })
           setc_username("")
           setc_password("")
           setc_email("")
           setUserTable()
+        } else if (response.data === "A100") {
+          appDispatch({ type: "loggedOut" })
+          appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
         } else {
-          appDispatch({ type: "errorToast", data: "Please contact an administrator." })
+          appDispatch({ type: "errorToast", data: "User not created. Please check for duplicate username." })
         }
       } catch (e) {
         console.log(e)

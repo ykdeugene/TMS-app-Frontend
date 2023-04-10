@@ -107,8 +107,12 @@ function UserManagement() {
     if (validatePassword(u_password)) {
       try {
         const response = await Axios.put("/user/update_password_admin", { u_password, u_username })
-        if (response.data) {
+        console.log(response.data)
+        if (response.data === true) {
           appDispatch({ type: "successToast", data: `password is updated for ${u_username}` })
+        } else if (response.data === "A100") {
+          appDispatch({ type: "loggedOut" })
+          appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
         } else {
           appDispatch({ type: "errorToast", data: "Please contact an administrator." })
         }
@@ -124,8 +128,11 @@ function UserManagement() {
   async function handleUpdateEmail(u_email, u_username) {
     try {
       const response = await Axios.put("/user/update_email_admin", { u_email, u_username })
-      if (response.data) {
+      if (response.data === true) {
         appDispatch({ type: "successToast", data: `Email is updated for ${u_username}` })
+      } else if (response.data === "A100") {
+        appDispatch({ type: "loggedOut" })
+        appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
       } else {
         appDispatch({ type: "errorToast", data: "Please contact an administrator." })
       }
@@ -139,12 +146,15 @@ function UserManagement() {
     try {
       const response = await Axios.put("/user/update_activeStatus_admin", { u_activestatus, u_username })
 
-      if (response.data) {
+      if (response.data === true) {
         if (u_activestatus) {
           appDispatch({ type: "successToast", data: `${u_username} has been activated.` })
         } else {
           appDispatch({ type: "successToast", data: `${u_username} has been deactivated` })
         }
+      } else if (response.data === "A100") {
+        appDispatch({ type: "loggedOut" })
+        appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
       } else {
         appDispatch({ type: "errorToast", data: "Please contact an administrator." })
       }
@@ -157,8 +167,11 @@ function UserManagement() {
   async function handleGroupSelect(u_group_name, u_username) {
     try {
       const response = await Axios.post("/group/add_user_to_group_admin", { u_group_name, u_username })
-      if (response.data) {
+      if (response.data === true) {
         appDispatch({ type: "successToast", data: `${u_username} has been added to ${u_group_name}` })
+      } else if (response.data === "A100") {
+        appDispatch({ type: "loggedOut" })
+        appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
       } else {
         appDispatch({ type: "errorToast", data: "Please contact an administrator." })
       }
@@ -171,8 +184,11 @@ function UserManagement() {
   async function handleGroupRemove(u_group_name, u_username) {
     try {
       const response = await Axios.post("/group/rmv_user_fr_group_admin", { u_group_name, u_username })
-      if (response.data) {
+      if (response.data === true) {
         appDispatch({ type: "successToast", data: `${u_username} has been removed from ${u_group_name}` })
+      } else if (response.data === "A100") {
+        appDispatch({ type: "loggedOut" })
+        appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
       } else {
         appDispatch({ type: "errorToast", data: "Please contact an administrator." })
       }

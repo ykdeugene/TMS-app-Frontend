@@ -96,9 +96,9 @@ function App() {
         <BrowserRouter>
           <NavBar />
           <Routes>
-            <Route path="/" element={state.loggedIn ? <TMSMain /> : <LoginPage />} />
+            <Route path="/" element={state.loggedIn ? <TMSMain verifyUser={verifyUser} /> : <LoginPage />} />
             <Route path="/edit" element={state.loggedIn ? <EditPage /> : <LoginPage />} />
-            <Route path="/main" element={state.loggedIn ? isAdmin ? <UserManagement /> : <ErrorPage /> : <LoginPage />} />
+            <Route path="/main" element={state.loggedIn ? isAdmin ? <UserManagement verifyUser={verifyUser} /> : <ErrorPage /> : <LoginPage />} />
           </Routes>
           <ToastContainer position="bottom-right" autoClose={1250} />
         </BrowserRouter>
