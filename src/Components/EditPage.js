@@ -15,6 +15,14 @@ function EditPage() {
   async function getUsername() {
     try {
       const response = await Axios.get(`/user/getusername`)
+      if (response.data === "A100") {
+        appDispatch({ type: "loggedOut" })
+        appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
+        return
+      } else if (response.data === false) {
+        appDispatch({ type: "errorToast", data: "Please contact an administrator." })
+        return
+      }
       setUsername(response.data.username)
     } catch (e) {
       appDispatch({ type: "errorToast", data: "Please contact an administrator." })
@@ -24,6 +32,14 @@ function EditPage() {
   // function to get user's group
   async function fetchGroups() {
     const response = await Axios.get("/group/user")
+    if (response.data === "A100") {
+      appDispatch({ type: "loggedOut" })
+      appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
+      return
+    } else if (response.data === false) {
+      appDispatch({ type: "errorToast", data: "Please contact an administrator." })
+      return
+    }
     setGroups(response.data)
   }
 

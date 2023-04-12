@@ -18,10 +18,9 @@ function CreateUsers({ setUserTable }) {
       email_checker = validator.isEmail(c_email)
     }
 
-    if (c_username !== "" && validatePassword(c_password) && email_checker) {
+    if (validator.isAlphanumeric(c_username) && validatePassword(c_password) && email_checker) {
       try {
         const response = await Axios.post("/user/create_user_admin", { c_username, c_password, c_email })
-        console.log(response.data)
         if (response.data === true) {
           appDispatch({ type: "successToast", data: "New user is created." })
           setc_username("")
@@ -40,7 +39,6 @@ function CreateUsers({ setUserTable }) {
       }
     } else {
       appDispatch({ type: "errorToast", data: "Please check input fields again." })
-      console.log("you have input username/pw/email incorrectly")
     }
   }
 

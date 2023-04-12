@@ -24,7 +24,7 @@ function CreateGroup({ setUserTable }) {
           appDispatch({ type: "errorToast", data: "Group not created. Please check for duplicate group name." })
         }
       } catch (e) {
-        appDispatch({ type: "errorToast", data: "Group is not created. Check for duplicate group name." })
+        appDispatch({ type: "errorToast", data: "Please contact an administrator." })
       }
     }
   }

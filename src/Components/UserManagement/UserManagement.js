@@ -20,6 +20,14 @@ function UserManagement() {
     // get group data
     try {
       const response = await Axios.get(`/groups`)
+      if (response.data === "A100") {
+        appDispatch({ type: "loggedOut" })
+        appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
+        return
+      } else if (response.data === false) {
+        appDispatch({ type: "errorToast", data: "Please contact an administrator." })
+        return
+      }
       const processedData = []
       response.data.groups.forEach(group => {
         const existingUser = processedData.find(user => user.username === group.username)
@@ -46,7 +54,7 @@ function UserManagement() {
             value: group,
             label: group,
             usernameInState: username,
-            isFixed: group === "Admin" && (user.username === username || user.username === "admin0")
+            isFixed: group === "Admin" && (user.username === username || user.username === "admin")
           })
         })
         for_options.push({ username: user.username, groups: options })
@@ -59,6 +67,14 @@ function UserManagement() {
     // get users data
     try {
       const response = await Axios.get(`/users`)
+      if (response.data === "A100") {
+        appDispatch({ type: "loggedOut" })
+        appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
+        return
+      } else if (response.data === false) {
+        appDispatch({ type: "errorToast", data: "Please contact an administrator." })
+        return
+      }
       setUsers(response.data.users)
     } catch (e) {
       console.log(e)
@@ -136,6 +152,7 @@ function UserManagement() {
       } else {
         appDispatch({ type: "errorToast", data: "Please contact an administrator." })
       }
+      setUserTable()
     } catch (e) {
       appDispatch({ type: "errorToast", data: "Please contact an administrator." })
     }
@@ -284,6 +301,8 @@ function UserManagement() {
                         onBlur={e => {
                           if (e.target.value !== user.email && validator.isEmail(e.target.value)) {
                             handleUpdateEmail(e.target.value, user.username)
+                          } else if (e.target.value !== user.email && e.target.value === "") {
+                            handleUpdateEmail(e.target.value, user.username)
                           } else {
                             e.target.value = user.email
                             appDispatch({ type: "errorToast", data: "Email not updated. Please check input again." })
@@ -318,7 +337,7 @@ function UserManagement() {
                       }}
                       type="checkbox"
                       defaultChecked={user.active_status}
-                      disabled={user.username === "admin0" || user.username === username}
+                      disabled={user.username === "admin" || user.username === username}
                     />
                   </td>
                 </tr>
