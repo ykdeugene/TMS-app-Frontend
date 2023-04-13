@@ -12,6 +12,7 @@ import TMSMain from "./Components/TMSMain"
 import EditPage from "./Components/EditPage"
 import ErrorPage from "./Components/ErrorPage"
 import UserManagement from "./Components/UserManagement/UserManagement"
+import Testing from "./Components/testing"
 // Importing toast for notifications
 import { ToastContainer, toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
@@ -96,6 +97,7 @@ function App() {
         <BrowserRouter>
           <NavBar />
           <Routes>
+            <Route path="/testing" element={<Testing />} />
             <Route path="/" element={state.loggedIn ? <TMSMain verifyUser={verifyUser} /> : <LoginPage />} />
             <Route path="/edit" element={state.loggedIn ? <EditPage /> : <LoginPage />} />
             <Route path="/main" element={state.loggedIn ? isAdmin ? <UserManagement verifyUser={verifyUser} /> : <ErrorPage /> : <LoginPage />} />

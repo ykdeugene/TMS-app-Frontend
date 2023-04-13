@@ -43,25 +43,26 @@ function NavBarLoggedIn() {
 
   return (
     <>
-      <ul className="nav col-12 col-md-auto mb-2 justify-content-center mb-md-0">
-        <li></li>
-        <li>
-          {isAdmin ? (
-            <Link to="/main" className="nav-link px-2 text-white">
-              User Management
+      <div>
+        <ul className="nav">
+          <li>
+            {isAdmin ? (
+              <Link to="/main" className="nav-link text-white">
+                User Management
+              </Link>
+            ) : (
+              ""
+            )}
+          </li>
+          <li>
+            <Link to="/edit" className="nav-link text-white">
+              Edit Profile
             </Link>
-          ) : (
-            ""
-          )}
-        </li>
-        <li>
-          <Link to="/edit" className="nav-link px-2 text-white">
-            Edit Profile
-          </Link>
-        </li>
-      </ul>
+          </li>
+        </ul>
+      </div>
 
-      <div className="col-md-3 text-end pe-3">
+      <div className="text-end pe-3">
         <div className="text-white d-inline pe-3">
           <div className="text-white d-inline pe-3">Hi! {username}</div>
         </div>
