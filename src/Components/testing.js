@@ -2,61 +2,45 @@ import React, { useEffect } from "react"
 
 function Testing() {
   return (
-    <>
-      <div className="d-flex">
-        <div className="card col m-1">
-          <div className="card-header text-center">Open Tasks</div>
-          {/* Task Card ===== From Here */}
-          <div class="card text-center m-2">
-            <hr class="m-0 rounded-top" style={{ height: "5px", backgroundColor: "#34eb49", border: "none" }} />
-            <div class="card-header pt-1 pb-1">Task Name</div>
-            <div class="card-body pt-1 pb-0">
-              <p class="card-text">Task ID</p>
-            </div>
-            <div className="d-flex justify-content-between ps-5 pe-5">
-              <a href="edit application modal">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-left-fill" viewBox="0 0 16 16">
-                  <path d="m3.86 8.753 5.482 4.796c.646.566 1.658.106 1.658-.753V3.204a1 1 0 0 0-1.659-.753l-5.48 4.796a1 1 0 0 0 0 1.506z" />
-                </svg>
-              </a>
-              <a href="edit application modal">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
-                  <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
-                  <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z" />
-                </svg>
-              </a>
-              <a href="edit application modal">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-right-fill" viewBox="0 0 16 16">
-                  <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z" />
-                </svg>
-              </a>
-            </div>
+    <div>
+      <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample">
+        Button with data-bs-target
+      </button>
+
+      <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title" id="offcanvasExampleLabel">
+            Offcanvas
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+          <div>Some text as placeholder... In real life you can have the elements you have chosen. Like, text, images, lists, etc.</div>
+          <div class="dropdown mt-3">
+            <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+              Dropdown button
+            </button>
+            <ul class="dropdown-menu">
+              <li>
+                <a class="dropdown-item" href="#">
+                  Action
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="#">
+                  Another action
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="#">
+                  Something else here
+                </a>
+              </li>
+            </ul>
           </div>
-          {/* Task Card ===== To Here */}
-        </div>
-        <div className="card col m-1">
-          <div className="card-header text-center">To-do Tasks</div>
-          {/* Task Card ===== From Here */}
-          {/* Task Card ===== To Here */}
-        </div>
-        <div className="card col m-1">
-          <div className="card-header text-center">Doing Tasks</div>
-          {/* Task Card ===== From Here */}
-          {/* Task Card ===== To Here */}
-        </div>
-        <div className="card col m-1">
-          <div className="card-header text-center">Done Tasks</div>
-          {/* Task Card ===== From Here */}
-          {/* Task Card ===== To Here */}
-        </div>
-        <div className="card col m-1">
-          <div className="card-header text-center">Closed Tasks</div>
-          {/* Task Card ===== From Here */}
-          {/* Task Card ===== To Here */}
         </div>
       </div>
-      <div class="p-5"></div>
-    </>
+    </div>
   )
 }
 

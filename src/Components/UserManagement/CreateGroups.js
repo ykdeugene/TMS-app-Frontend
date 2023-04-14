@@ -26,6 +26,8 @@ function CreateGroup({ setUserTable }) {
       } catch (e) {
         appDispatch({ type: "errorToast", data: "Please contact an administrator." })
       }
+    } else {
+      appDispatch({ type: "errorToast", data: "Please check input fields again." })
     }
   }
 

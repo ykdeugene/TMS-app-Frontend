@@ -8,7 +8,7 @@ import DispatchContext from "./DispatchContext"
 // Importing my components
 import NavBar from "./Components/NavBar/NavBar"
 import LoginPage from "./Components/LoginPage"
-import TMSMain from "./Components/TMSMain"
+import TMSMain from "./Components/TMSMain/TMSMain"
 import EditPage from "./Components/EditPage"
 import ErrorPage from "./Components/ErrorPage"
 import UserManagement from "./Components/UserManagement/UserManagement"
