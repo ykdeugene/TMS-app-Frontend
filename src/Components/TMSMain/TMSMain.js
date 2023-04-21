@@ -3,9 +3,13 @@ import Axios from "axios"
 import DispatchContext from "../../DispatchContext"
 import CreateApplication from "./CreateApplication"
 import CreateTask from "./CreateTask"
-import PlanManager from "./PlanManager"
+import CreatePlan from "./CreatePlan"
 import PlanBar from "./PlanBar"
 import ColorBar from "./ColourBar"
+import PromoteTaskModal from "./PromoteTaskModal"
+import EditTaskModal from "./EditTaskModal"
+import DemoteTaskModal from "./DemoteTaskModal"
+import ViewTaskModal from "./ViewTaskModal"
 
 function TMSMain() {
   const appDispatch = useContext(DispatchContext)
@@ -13,8 +17,22 @@ function TMSMain() {
   const [groups, setGroups] = useState([])
   const [selectedEditApp, setSelectedEditApp] = useState("")
   const [selectedApp, setSelectedApp] = useState("")
+  const [selectedTask, setSelectedTask] = useState("")
   const [plans, setPlans] = useState([])
   const [tasks, setTasks] = useState([])
+  const [username, setUsername] = useState("")
+  const [userGroups, setUserGroups] = useState([])
+  const [trigger, setTrigger] = useState(false)
+
+  async function getUsername() {
+    try {
+      const response = await Axios.get(`/user/getusername`)
+      setUsername(response.data.username)
+    } catch (e) {
+      console.log(e)
+      appDispatch({ type: "errorToast", data: "Please contact an administrator." })
+    }
+  }
 
   async function fetchApplication() {
     try {
@@ -90,11 +108,33 @@ function TMSMain() {
     }
   }
 
+  async function getUserGroups() {
+    const response = await Axios.get("/group/user")
+    if (response.data === "A100") {
+      appDispatch({ type: "loggedOut" })
+      appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
+      return
+    } else if (response.data === false) {
+      appDispatch({ type: "errorToast", data: "Please contact an administrator." })
+      return
+    }
+    let groupElement = []
+    response.data.map(group => {
+      groupElement.push(group.group_name)
+    })
+    setUserGroups(groupElement)
+  }
+
   function handleCloseEdit() {
     appDispatch({ type: "errorToast", data: "Application not updated." })
     var modal = document.getElementById("appModal")
     var form = modal.querySelector("form")
     form.reset()
+    setSelectedEditApp("")
+  }
+
+  function resetSetTask() {
+    setSelectedTask("")
   }
 
   async function handleUpdateApplication() {
@@ -107,57 +147,108 @@ function TMSMain() {
     let done = document.getElementById("editApplicationDone").value
     let appName = document.getElementById("editApplicationName").value
 
-    try {
-      const response = await Axios.put(`/tms/update_application`, { description, startDate, endDate, open, toDo, doing, done, appName })
-      if (response.data === "A100") {
-        appDispatch({ type: "loggedOut" })
-        appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
-        return
-      }
+    let dateValidate
 
-      if (response.data === true) {
-        appDispatch({ type: "successToast", data: `${selectedEditApp.App_Acronym} updated.` })
-        var modal = document.getElementById("appModal")
-        var form = modal.querySelector("form")
-        form.reset()
-        fetchApplication()
-        return
-      } else {
-        appDispatch({ type: "errorToast", data: `No updates made to ${selectedEditApp.App_Acronym}` })
-        return
+    if (startDate === "" && endDate === "") {
+      dateValidate = true
+    } else {
+      dateValidate = Boolean(endDate >= startDate)
+    }
+
+    let validation = Boolean(dateValidate)
+
+    if (validation) {
+      try {
+        const response = await Axios.put(`/tms/update_application`, { description, startDate, endDate, open, toDo, doing, done, appName })
+        if (response.data === "A100") {
+          appDispatch({ type: "loggedOut" })
+          appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
+          return
+        }
+
+        if (response.data === true) {
+          appDispatch({ type: "successToast", data: `${selectedEditApp.App_Acronym} updated.` })
+          var modal = document.getElementById("appModal")
+          var form = modal.querySelector("form")
+          form.reset()
+          fetchApplication()
+          console.log(`before setting 1 ${trigger}`)
+          setTrigger(true)
+          console.log(`before setting 2 ${trigger}`)
+          return
+        } else {
+          appDispatch({ type: "errorToast", data: `No updates made to ${selectedEditApp.App_Acronym}` })
+          return
+        }
+      } catch (e) {
+        console.log(e)
+        appDispatch({ type: "errorToast", data: "Please contact an administrator. (handleUpdateApplication catch(e))" })
       }
-    } catch (e) {
-      console.log(e)
-      appDispatch({ type: "errorToast", data: "Please contact an administrator. (handleUpdateApplication catch(e))" })
+    } else {
+      var modal = document.getElementById("appModal")
+      var form = modal.querySelector("form")
+      form.reset()
+      appDispatch({ type: "errorToast", data: `${selectedEditApp.App_Acronym} not updated. Please check input fields again.` })
     }
   }
 
-  async function handlePromoteApplication() {}
+  useEffect(() => {
+    applications.map(application => {
+      if (application.App_Acronym === selectedEditApp.App_Acronym) {
+        console.log(`after setting 3 ${trigger}`)
+        setSelectedApp(application)
+        setTrigger(false)
+      }
+    })
+  }, [trigger])
 
   useEffect(() => {
     fetchApplication()
     fetchGroups()
     fetchPlans()
     fetchTasks()
+    getUsername()
+    getUserGroups()
   }, [selectedApp])
 
   return (
     <div>
-      <CreateApplication fetchApplication={fetchApplication} />
+      {Boolean(userGroups.includes("Project Lead")) ? <CreateApplication fetchApplication={fetchApplication} /> : <></>}
       {/* Area to view all applications ===== From Here */}
-      <div className="d-flex flex-wrap align-items-center justify-content-center overflow-y-auto p-3" style={{ height: "82vh" }}>
+      <div className="d-flex flex-wrap align-items-center justify-content-center overflow-y-auto p-3" style={{ height: "90vh" }}>
         {applications.map(application => {
           return (
             <div key={application.App_Acronym} className="d-flex align-items-center p-3">
               <div className="input-group">
-                <a href="#kanBan" className="btn btn-light border" type="button" onClick={() => setSelectedApp(application)} style={{ width: "30vh" }}>
+                <a
+                  id={"patch" + application.App_Acronym}
+                  href="#kanBan"
+                  className="btn btn-light border"
+                  type="button"
+                  onClick={() => {
+                    setSelectedApp(application)
+                  }}
+                  style={{ width: "30vh" }}
+                >
                   {application.App_Acronym}
                 </a>
-                <button className="border btn-light btn" type="button" data-bs-toggle="modal" data-bs-target="#appModal" onClick={() => setSelectedEditApp(application)}>
-                  <svg className="bi bi-wrench" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16">
-                    <path d="M.102 2.223A3.004 3.004 0 0 0 3.78 5.897l6.341 6.252A3.003 3.003 0 0 0 13 16a3 3 0 1 0-.851-5.878L5.897 3.781A3.004 3.004 0 0 0 2.223.1l2.141 2.142L4 4l-1.757.364L.102 2.223zm13.37 9.019.528.026.287.445.445.287.026.529L15 13l-.242.471-.026.529-.445.287-.287.445-.529.026L13 15l-.471-.242-.529-.026-.287-.445-.445-.287-.026-.529L11 13l.242-.471.026-.529.445-.287.287-.445.529-.026L13 11l.471.242z" />
-                  </svg>
-                </button>
+                {Boolean(userGroups.includes("Project Lead")) ? (
+                  <button
+                    className="border btn-light btn"
+                    type="button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#appModal"
+                    onClick={() => {
+                      setSelectedEditApp(application)
+                    }}
+                  >
+                    <svg className="bi bi-wrench" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16">
+                      <path d="M.102 2.223A3.004 3.004 0 0 0 3.78 5.897l6.341 6.252A3.003 3.003 0 0 0 13 16a3 3 0 1 0-.851-5.878L5.897 3.781A3.004 3.004 0 0 0 2.223.1l2.141 2.142L4 4l-1.757.364L.102 2.223zm13.37 9.019.528.026.287.445.445.287.026.529L15 13l-.242.471-.026.529-.445.287-.287.445-.529.026L13 15l-.471-.242-.529-.026-.287-.445-.445-.287-.026-.529L11 13l.242-.471.026-.529.445-.287.287-.445.529-.026L13 11l.471.242z" />
+                    </svg>
+                  </button>
+                ) : (
+                  <></>
+                )}
               </div>
             </div>
           )
@@ -176,7 +267,7 @@ function TMSMain() {
               <button onClick={handleCloseEdit} type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body pt-1">
-              <form id="createAppplicationForm">
+              <form id="editAppplicationForm">
                 <h5 className="offcanvas-title">Details</h5>
                 <div className="d-flex">
                   <div className="pe-3">
@@ -296,206 +387,242 @@ function TMSMain() {
       </div>
       {/* Modal for Edit Application ===== To Here */}
 
-      {/* div to scroll to here!!! ===== From Here */}
-      <div id="kanBan" style={{ height: "7.5vh" }}></div>
-      {/* div to scroll to here!!! ===== To Here */}
-
       {/* Section for create plan/task ===== From Here */}
-      <div className="d-flex justify-content-between pe-4">
-        <h3 className="ps-3" id="selectedAppName" value="selectedApp.App_Acronym">
-          Application: {selectedApp.App_Acronym}
-        </h3>
-        <PlanManager applicationName={selectedApp.App_Acronym} fetchPlans={fetchPlans} plans={plans} setSelectedApp={setSelectedApp} />
-        <CreateTask application={selectedApp} fetchTasks={fetchTasks} />
+      <div className="d-flex justify-content-between align-items-center pe-4">
+        <h4 className="ps-3" value="selectedApp.App_Acronym">
+          {selectedApp.App_Acronym}
+        </h4>
+        {Boolean(userGroups.includes(selectedApp.App_permit_Open)) ? <CreatePlan applicationName={selectedApp.App_Acronym} fetchPlans={fetchPlans} plans={plans} /> : <></>}
+        {Boolean(userGroups.includes("Project Lead")) ? <CreateTask username={username} application={selectedApp} fetchTasks={fetchTasks} fetchApplication={fetchApplication} plans={plans} /> : <></>}
       </div>
       {/* Section for create plan/task ===== To Here */}
+
       {/* Plan bar ===== From Here */}
-      <PlanBar plans={plans} />
+      <PlanBar plans={plans} fetchPlans={fetchPlans} userGroups={userGroups} selectedApp={selectedApp} />
       {/* Plan bar ===== To Here */}
 
       {/* Task Overview ===== From Here */}
       <div className="d-flex" style={{ minHeight: "100vh" }}>
         <div className="card col m-1">
           <div className="card-header text-center">Open Tasks</div>
-          {/* Populate Task Card ===== From Here */}
+          {/* Populate Open Task Card ===== From Here */}
           {tasks.map(task => {
             if (task.Task_state === 1) {
               return (
                 <div className="card text-center ms-2 me-2 mt-1">
                   <ColorBar task={task} plans={plans} />
                   <div className="card-header pt-1 pb-1">
-                    {task.Task_id}: {task.Task_name}
+                    <div>{task.Task_id}</div>
+                    <div>{task.Task_name}</div>
                   </div>
-                  <div className="d-flex justify-content-between ps-5 pe-5">
-                    <a href="edit application modal">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-caret-left-fill" viewBox="0 0 16 16">
-                        <path d="m3.86 8.753 5.482 4.796c.646.566 1.658.106 1.658-.753V3.204a1 1 0 0 0-1.659-.753l-5.48 4.796a1 1 0 0 0 0 1.506z" />
-                      </svg>
-                    </a>
-                    <a href="edit application modal">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-pencil-square" viewBox="0 0 16 16">
-                        <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
-                        <path fillRule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z" />
-                      </svg>
-                    </a>
-                    <a href="edit application modal">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-caret-right-fill" viewBox="0 0 16 16">
-                        <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z" />
-                      </svg>
-                    </a>
-                  </div>
+                  {Boolean(userGroups.includes(selectedApp.App_permit_Open)) ? (
+                    <div className="d-flex justify-content-between ps-5 pe-5">
+                      <div style={{ width: "16px", height: "16px" }}></div>
+                      <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#EditTaskModal" onClick={() => setSelectedTask(task)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-pencil-square" viewBox="0 0 16 16">
+                          <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
+                          <path fillRule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z" />
+                        </svg>
+                      </button>
+                      <button
+                        className="btn p-0"
+                        type="button"
+                        data-bs-toggle="modal"
+                        data-bs-target="#PromoteTaskModal"
+                        onClick={() => {
+                          setSelectedTask(task)
+                        }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-caret-right-fill" viewBox="0 0 16 16">
+                          <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="d-flex justify-content-center ps-5 pe-5">
+                      <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#ViewTaskModal" onClick={() => setSelectedTask(task)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
+                          <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
+                          <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )
             }
           })}
-          {/* Populate Task Card ===== To Here */}
+          {/* Populate Open Task Card ===== To Here */}
         </div>
         <div className="card col m-1">
           <div className="card-header text-center">To-do Tasks</div>
-          {/* Populate Task Card ===== From Here */}
+          {/* Populate Todo Task Card ===== From Here */}
           {tasks.map(task => {
             if (task.Task_state === 2) {
               return (
-                <div className="card text-center ms-2 me-2 mt-1">
+                <div className="card text-center ms-2 me-2 mt-1" id={task.Task_id}>
                   <ColorBar task={task} plans={plans} />
                   <div className="card-header pt-1 pb-1">
-                    {task.Task_id}: {task.Task_name}
+                    <div>{task.Task_id}</div>
+                    <div>{task.Task_name}</div>
                   </div>
-
-                  <div className="d-flex justify-content-between ps-5 pe-5">
-                    <a href="edit application modal">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-caret-left-fill" viewBox="0 0 16 16">
-                        <path d="m3.86 8.753 5.482 4.796c.646.566 1.658.106 1.658-.753V3.204a1 1 0 0 0-1.659-.753l-5.48 4.796a1 1 0 0 0 0 1.506z" />
-                      </svg>
-                    </a>
-                    <a href="edit application modal">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-pencil-square" viewBox="0 0 16 16">
-                        <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
-                        <path fillRule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z" />
-                      </svg>
-                    </a>
-                    <a href="edit application modal">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-caret-right-fill" viewBox="0 0 16 16">
-                        <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z" />
-                      </svg>
-                    </a>
-                  </div>
+                  {Boolean(userGroups.includes(selectedApp.App_permit_toDoList)) ? (
+                    <div className="d-flex justify-content-between ps-5 pe-5">
+                      <div style={{ width: "16px", height: "16px" }}></div>
+                      <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#EditTaskModal" onClick={() => setSelectedTask(task)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-pencil-square" viewBox="0 0 16 16">
+                          <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
+                          <path fillRule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z" />
+                        </svg>
+                      </button>
+                      <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#PromoteTaskModal" onClick={() => setSelectedTask(task)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-caret-right-fill" viewBox="0 0 16 16">
+                          <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="d-flex justify-content-center ps-5 pe-5">
+                      <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#ViewTaskModal" onClick={() => setSelectedTask(task)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
+                          <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
+                          <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )
             }
           })}
-          {/* Populate Task Card ===== To Here */}
+          {/* Populate Todo Task Card ===== To Here */}
         </div>
         <div className="card col m-1">
           <div className="card-header text-center">Doing Tasks</div>
-          {/* Populate Task Card ===== From Here */}
+          {/* Populate Doing Task Card ===== From Here */}
           {tasks.map(task => {
             if (task.Task_state === 3) {
               return (
-                <div className="card text-center ms-2 me-2 mt-1">
+                <div className="card text-center ms-2 me-2 mt-1" id={task.Task_id}>
                   <ColorBar task={task} plans={plans} />
                   <div className="card-header pt-1 pb-1">
-                    {task.Task_id}: {task.Task_name}
+                    <div>{task.Task_id}</div>
+                    <div>{task.Task_name}</div>
                   </div>
-
-                  <div className="d-flex justify-content-between ps-5 pe-5">
-                    <a href="edit application modal">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-caret-left-fill" viewBox="0 0 16 16">
-                        <path d="m3.86 8.753 5.482 4.796c.646.566 1.658.106 1.658-.753V3.204a1 1 0 0 0-1.659-.753l-5.48 4.796a1 1 0 0 0 0 1.506z" />
-                      </svg>
-                    </a>
-                    <a href="edit application modal">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-pencil-square" viewBox="0 0 16 16">
-                        <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
-                        <path fillRule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z" />
-                      </svg>
-                    </a>
-                    <a href="edit application modal">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-caret-right-fill" viewBox="0 0 16 16">
-                        <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z" />
-                      </svg>
-                    </a>
-                  </div>
+                  {Boolean(userGroups.includes(selectedApp.App_permit_Doing)) ? (
+                    <div className="d-flex justify-content-between ps-5 pe-5">
+                      <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#DemoteTaskModal" onClick={() => setSelectedTask(task)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-caret-left-fill" viewBox="0 0 16 16">
+                          <path d="m3.86 8.753 5.482 4.796c.646.566 1.658.106 1.658-.753V3.204a1 1 0 0 0-1.659-.753l-5.48 4.796a1 1 0 0 0 0 1.506z" />
+                        </svg>
+                      </button>
+                      <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#EditTaskModal" onClick={() => setSelectedTask(task)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-pencil-square" viewBox="0 0 16 16">
+                          <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
+                          <path fillRule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z" />
+                        </svg>
+                      </button>
+                      <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#PromoteTaskModal" onClick={() => setSelectedTask(task)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-caret-right-fill" viewBox="0 0 16 16">
+                          <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="d-flex justify-content-center ps-5 pe-5">
+                      <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#ViewTaskModal" onClick={() => setSelectedTask(task)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
+                          <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
+                          <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )
             }
           })}
-          {/* Populate Task Card ===== To Here */}
+          {/* Populate Doing Task Card ===== To Here */}
         </div>
         <div className="card col m-1">
           <div className="card-header text-center">Done Tasks</div>
-          {/* Populate Task Card ===== From Here */}
+          {/* Populate Done Task Card ===== From Here */}
           {tasks.map(task => {
             if (task.Task_state === 4) {
               return (
-                <div className="card text-center ms-2 me-2 mt-1">
+                <div className="card text-center ms-2 me-2 mt-1" id={task.Task_id}>
                   <ColorBar task={task} plans={plans} />
                   <div className="card-header pt-1 pb-1">
-                    {task.Task_id}: {task.Task_name}
+                    <div>{task.Task_id}</div>
+                    <div>{task.Task_name}</div>
                   </div>
-
-                  <div className="d-flex justify-content-between ps-5 pe-5">
-                    <a href="edit application modal">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-caret-left-fill" viewBox="0 0 16 16">
-                        <path d="m3.86 8.753 5.482 4.796c.646.566 1.658.106 1.658-.753V3.204a1 1 0 0 0-1.659-.753l-5.48 4.796a1 1 0 0 0 0 1.506z" />
-                      </svg>
-                    </a>
-                    <a href="edit application modal">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-pencil-square" viewBox="0 0 16 16">
-                        <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
-                        <path fillRule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z" />
-                      </svg>
-                    </a>
-                    <a href="edit application modal">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-caret-right-fill" viewBox="0 0 16 16">
-                        <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z" />
-                      </svg>
-                    </a>
-                  </div>
+                  {Boolean(userGroups.includes(selectedApp.App_permit_Done)) ? (
+                    <div className="d-flex justify-content-between ps-5 pe-5">
+                      <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#DemoteTaskModal" onClick={() => setSelectedTask(task)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-caret-left-fill" viewBox="0 0 16 16">
+                          <path d="m3.86 8.753 5.482 4.796c.646.566 1.658.106 1.658-.753V3.204a1 1 0 0 0-1.659-.753l-5.48 4.796a1 1 0 0 0 0 1.506z" />
+                        </svg>
+                      </button>
+                      <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#EditTaskModal" onClick={() => setSelectedTask(task)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-pencil-square" viewBox="0 0 16 16">
+                          <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
+                          <path fillRule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z" />
+                        </svg>
+                      </button>
+                      <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#PromoteTaskModal" onClick={() => setSelectedTask(task)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-caret-right-fill" viewBox="0 0 16 16">
+                          <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="d-flex justify-content-center ps-5 pe-5">
+                      <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#ViewTaskModal" onClick={() => setSelectedTask(task)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
+                          <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
+                          <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )
             }
           })}
-          {/* Populate Task Card ===== To Here */}
+          {/* Populate Done Task Card ===== To Here */}
         </div>
         <div className="card col m-1">
           <div className="card-header text-center">Closed Tasks</div>
-          {/* Populate Task Card ===== From Here */}
+          {/* Populate Closed Task Card ===== From Here */}
           {tasks.map(task => {
             if (task.Task_state === 5) {
               return (
-                <div className="card text-center ms-2 me-2 mt-1">
+                <div className="card text-center ms-2 me-2 mt-1" id={task.Task_id}>
                   <ColorBar task={task} plans={plans} />
                   <div className="card-header pt-1 pb-1">
-                    {task.Task_id}: {task.Task_name}
+                    <div>{task.Task_id}</div>
+                    <div>{task.Task_name}</div>
                   </div>
-
-                  <div className="d-flex justify-content-between ps-5 pe-5">
-                    <a href="edit application modal">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-caret-left-fill" viewBox="0 0 16 16">
-                        <path d="m3.86 8.753 5.482 4.796c.646.566 1.658.106 1.658-.753V3.204a1 1 0 0 0-1.659-.753l-5.48 4.796a1 1 0 0 0 0 1.506z" />
+                  <div className="d-flex justify-content-center ps-5 pe-5">
+                    <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#ViewTaskModal" onClick={() => setSelectedTask(task)}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
+                        <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
+                        <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
                       </svg>
-                    </a>
-                    <a href="edit application modal">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-pencil-square" viewBox="0 0 16 16">
-                        <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
-                        <path fillRule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z" />
-                      </svg>
-                    </a>
-                    <a href="edit application modal">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-caret-right-fill" viewBox="0 0 16 16">
-                        <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z" />
-                      </svg>
-                    </a>
+                    </button>
                   </div>
                 </div>
               )
             }
           })}
-          {/* Populate Task Card ===== To Here */}
+          {/* Populate Closed Task Card ===== To Here */}
         </div>
       </div>
       {/* Task Overview ===== To Here */}
+      <PromoteTaskModal fetchTasks={fetchTasks} username={username} selectedTask={selectedTask} plans={plans} resetSetTask={resetSetTask} />
+      <EditTaskModal fetchTasks={fetchTasks} username={username} selectedTask={selectedTask} plans={plans} resetSetTask={resetSetTask} />
+      <DemoteTaskModal fetchTasks={fetchTasks} username={username} selectedTask={selectedTask} plans={plans} resetSetTask={resetSetTask} />
+      <ViewTaskModal selectedTask={selectedTask} plans={plans} />
     </div>
   )
 }

@@ -114,6 +114,7 @@ function UserManagement() {
   function defVal(user) {
     const group = groups.find(group => group.username === user)
     if (group) {
+      console.log(group.groups)
       return group.groups
     }
   }

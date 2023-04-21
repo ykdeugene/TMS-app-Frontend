@@ -1,5 +1,6 @@
 import React, { useContext, useState, useEffect } from "react"
 import Axios from "axios"
+import validator from "validator"
 import DispatchContext from "../../DispatchContext"
 
 function CreateApplication({ fetchApplication }) {
@@ -8,7 +9,7 @@ function CreateApplication({ fetchApplication }) {
   const [appRNum, setAppRNum] = useState("")
   // for offcanvas
   const [appNameOC, setAppNameOC] = useState("")
-  const [appRNumOC, setAppRNumOC] = useState(0)
+  const [appRNumOC, setAppRNumOC] = useState("1")
   const [appDescription, setAppDescription] = useState("")
   const [appStartDate, setAppStartDate] = useState(null)
   const [appEndDate, setAppEndDate] = useState(null)
@@ -37,9 +38,13 @@ function CreateApplication({ fetchApplication }) {
   }
 
   async function handleFastCreateApplication() {
-    if (appName === "" || appRNum === "") {
-      appDispatch({ type: "errorToast", data: "Please check input fields again." })
-    } else {
+    let mandatoryFieldsCheck = !Boolean(appName === "" || appRNum === "")
+    let rNumValidate = validator.isInt(appRNum, { gt: 0, allow_leading_zeroes: false })
+    let appNameValidate = validator.isAlpha(appName)
+
+    let validation = Boolean(mandatoryFieldsCheck && rNumValidate && appNameValidate)
+
+    if (validation) {
       try {
         const [appDescription, appStartDate, appEndDate, appOpen, appToDo, appDoing, appDone] = ["", "", "", "", "", "", ""]
         const response = await Axios.post("/tms/create_application", { appName, appRNum, appDescription, appStartDate, appEndDate, appOpen, appToDo, appDoing, appDone })
@@ -59,42 +64,57 @@ function CreateApplication({ fetchApplication }) {
         console.log(e)
         appDispatch({ type: "errorToast", data: "Please contact an administrator." })
       }
+    } else {
+      appDispatch({ type: "errorToast", data: "New Application not created. Please check input fields again." })
     }
   }
 
   async function handleSubmitCreateApplication() {
-    if (appStartDate === "") {
-      setAppStartDate(null)
-    }
-    if (appEndDate === "") {
-      setAppEndDate(null)
-    }
-    try {
-      const response = await Axios.post("/tms/create_application", { appNameOC, appRNumOC, appDescription, appStartDate, appEndDate, appOpen, appToDo, appDoing, appDone })
+    let mandatoryFieldsCheck = !Boolean(appNameOC === "" || appRNumOC === "")
+    let rNumValidate = validator.isInt(appRNumOC, { gt: 0, allow_leading_zeroes: false })
+    let appNameValidate = validator.isAlpha(appNameOC)
+    let dateValidate
 
-      if (response.data === true) {
-        appDispatch({ type: "successToast", data: "New Application is created." })
-        setAppNameOC("")
-        setAppRNumOC(0)
-        setAppDescription("")
-        setAppStartDate(null)
-        setAppEndDate(null)
-        setAppOpen("")
-        setAppToDo("")
-        setAppDoing("")
-        setAppDone("")
-        fetchApplication()
-        document.getElementById("createAppplicationForm").reset()
-      } else if (response.data === "A100") {
-        appDispatch({ type: "loggedOut" })
-        appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
-      } else {
-        console.log(response.data)
-        appDispatch({ type: "errorToast", data: "New Application not created. Please check input fields again." })
+    if (appStartDate === "" && appEndDate === "") {
+      setAppStartDate(null)
+      setAppEndDate(null)
+      dateValidate = true
+    } else {
+      dateValidate = Boolean(appEndDate >= appStartDate)
+    }
+
+    let validation = Boolean(mandatoryFieldsCheck && rNumValidate && appNameValidate && dateValidate)
+
+    if (validation) {
+      try {
+        const response = await Axios.post("/tms/create_application", { appNameOC, appRNumOC, appDescription, appStartDate, appEndDate, appOpen, appToDo, appDoing, appDone })
+
+        if (response.data === true) {
+          appDispatch({ type: "successToast", data: "New Application is created." })
+          setAppNameOC("")
+          setAppRNumOC("1")
+          setAppDescription("")
+          setAppStartDate(null)
+          setAppEndDate(null)
+          setAppOpen("")
+          setAppToDo("")
+          setAppDoing("")
+          setAppDone("")
+          fetchApplication()
+          document.getElementById("createAppplicationForm").reset()
+        } else if (response.data === "A100") {
+          appDispatch({ type: "loggedOut" })
+          appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
+        } else {
+          console.log(response.data)
+          appDispatch({ type: "errorToast", data: "New Application not created. Please check input fields again." })
+        }
+      } catch (e) {
+        console.log(e)
+        appDispatch({ type: "errorToast", data: "Please contact an administrator." })
       }
-    } catch (e) {
-      console.log(e)
-      appDispatch({ type: "errorToast", data: "Please contact an administrator." })
+    } else {
+      appDispatch({ type: "errorToast", data: "New Application not created. Please check input fields again." })
     }
   }
 
@@ -107,14 +127,14 @@ function CreateApplication({ fetchApplication }) {
       <div className="d-flex justify-content-center" style={{ height: "10vh" }}>
         <div className="input-group mb-2" style={{ height: "5vh", width: "90vh" }}>
           <input onChange={e => setAppName(e.target.value)} value={appName} placeholder="New Application Name" type="text" className="form-control" />
-          <input onChange={e => setAppRNum(e.target.value)} placeholder="Application R-Number" type="number" min="0" step="1" value={appRNum} className="form-control" />
-          {!Boolean(appName === "" && appRNum === "") ? (
+          <input onChange={e => setAppRNum(e.target.value)} placeholder="Application R-Number" type="text" value={appRNum} className="form-control" />
+          {!Boolean(!appName && !appRNum) ? (
             <button className="btn btn-primary" onClick={handleFastCreateApplication}>
-              Create
+              Fast Create
             </button>
           ) : (
             <button className="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#createAppFormOC">
-              Create
+              Create App
             </button>
           )}
         </div>
@@ -128,8 +148,8 @@ function CreateApplication({ fetchApplication }) {
           <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div className="offcanvas-body pt-0">
+          <h5 className="offcanvas-title">Details</h5>
           <form id="createAppplicationForm">
-            <h5 className="offcanvas-title">Details</h5>
             <div className="d-flex justify-content-between">
               <div>
                 <label htmlFor="applicationName" className="form-label mb-0 mt-1">
@@ -141,7 +161,7 @@ function CreateApplication({ fetchApplication }) {
                 <label htmlFor="applicationRnumber" className="form-label mb-0 mt-1">
                   R-number
                 </label>
-                <input onChange={e => setAppRNumOC(e.target.value)} value={appRNumOC} type="number" min="0" step="1" className="form-control" id="applicationRnumber" style={{ width: "20vh" }} />
+                <input onChange={e => setAppRNumOC(e.target.value)} value={appRNumOC} type="text" className="form-control" id="applicationRnumber" style={{ width: "20vh" }} />
               </div>
             </div>
             <div>
