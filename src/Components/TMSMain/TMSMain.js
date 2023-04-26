@@ -21,8 +21,8 @@ function TMSMain() {
   const [plans, setPlans] = useState([])
   const [tasks, setTasks] = useState([])
   const [username, setUsername] = useState("")
-  const [userGroups, setUserGroups] = useState([])
   const [resetSelectedApp, setResetSelectedApp] = useState(false)
+  const [permission, setPermission] = useState({ pl: false, pm: false, create: false, open: false, todo: false, doing: false, done: false })
 
   async function getUsername() {
     try {
@@ -108,23 +108,6 @@ function TMSMain() {
     }
   }
 
-  async function getUserGroups() {
-    const response = await Axios.get("/group/user")
-    if (response.data === "A100") {
-      appDispatch({ type: "loggedOut" })
-      appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
-      return
-    } else if (response.data === false) {
-      appDispatch({ type: "errorToast", data: "Please contact an administrator." })
-      return
-    }
-    let groupElement = []
-    response.data.map(group => {
-      groupElement.push(group.group_name)
-    })
-    setUserGroups(groupElement)
-  }
-
   function handleCloseEdit() {
     appDispatch({ type: "errorToast", data: "Application not updated." })
     var modal = document.getElementById("appModal")
@@ -192,6 +175,18 @@ function TMSMain() {
     }
   }
 
+  async function fetchPermission() {
+    const responsePL = await Axios.post(`/group/checkgroup`, { group_name: "Project Lead" })
+    const responsePM = await Axios.post(`/group/checkgroup`, { group_name: "Project Manager" })
+    const responseCreate = await Axios.post(`/group/checkgroup`, { group_name: selectedApp.App_permit_Create })
+    const responseOpen = await Axios.post(`/group/checkgroup`, { group_name: selectedApp.App_permit_Open })
+    const responseTodo = await Axios.post(`/group/checkgroup`, { group_name: selectedApp.App_permit_toDoList })
+    const responseDoing = await Axios.post(`/group/checkgroup`, { group_name: selectedApp.App_permit_Doing })
+    const responseDone = await Axios.post(`/group/checkgroup`, { group_name: selectedApp.App_permit_Done })
+
+    setPermission({ pl: responsePL.data, pm: responsePM.data, create: responseCreate.data, open: responseOpen.data, todo: responseTodo.data, doing: responseDoing.data, done: responseDone.data })
+  }
+
   useEffect(() => {
     applications.map(application => {
       if (application.App_Acronym === selectedEditApp.App_Acronym) {
@@ -208,12 +203,12 @@ function TMSMain() {
     fetchPlans()
     fetchTasks()
     getUsername()
-    getUserGroups()
+    fetchPermission()
   }, [selectedApp])
 
   return (
     <div>
-      {Boolean(userGroups.includes("Project Lead")) ? <CreateApplication fetchApplication={fetchApplication} /> : <></>}
+      {permission.pl ? <CreateApplication fetchApplication={fetchApplication} /> : <></>}
       {/* Area to view all applications ===== From Here */}
       <div className="d-flex flex-wrap align-items-center justify-content-center overflow-y-auto p-3" style={{ height: "90vh" }}>
         {applications.map(application => {
@@ -232,7 +227,7 @@ function TMSMain() {
                 >
                   {application.App_Acronym}
                 </a>
-                {Boolean(userGroups.includes("Project Lead")) ? (
+                {permission.pl ? (
                   <button
                     className="border btn-light btn"
                     type="button"
@@ -288,7 +283,7 @@ function TMSMain() {
                   <label htmlFor="editApplicationDescription" className="form-label mb-0 mt-1">
                     Description
                   </label>
-                  <textarea defaultValue={selectedEditApp.App_Description} type="text" className="form-control" id="editApplicationDescription" rows="7" />
+                  <textarea defaultValue={selectedEditApp.App_Description} type="text" className="form-control" id="editApplicationDescription" rows="12" />
                 </div>
                 <div className="d-flex">
                   <div className="pe-3">
@@ -409,13 +404,13 @@ function TMSMain() {
         <h4 className="ps-3" value="selectedApp.App_Acronym">
           {selectedApp.App_Acronym}
         </h4>
-        {Boolean(userGroups.includes("Project Manager")) && selectedApp !== "" ? <CreatePlan applicationName={selectedApp.App_Acronym} fetchPlans={fetchPlans} plans={plans} /> : <></>}
-        {Boolean(userGroups.includes("Project Lead") || userGroups.includes(selectedApp.App_permit_Create)) && selectedApp !== "" ? <CreateTask username={username} application={selectedApp} fetchTasks={fetchTasks} fetchApplication={fetchApplication} plans={plans} /> : <></>}
+        {permission.pm && selectedApp !== "" ? <CreatePlan applicationName={selectedApp.App_Acronym} fetchPlans={fetchPlans} plans={plans} /> : <></>}
+        {Boolean(permission.pl || permission.create) && selectedApp !== "" ? <CreateTask username={username} application={selectedApp} fetchTasks={fetchTasks} fetchApplication={fetchApplication} plans={plans} /> : <></>}
       </div>
       {/* Section for create plan/task ===== To Here */}
 
       {/* Plan bar ===== From Here */}
-      <PlanBar plans={plans} fetchPlans={fetchPlans} userGroups={userGroups} selectedApp={selectedApp} />
+      <PlanBar plans={plans} fetchPlans={fetchPlans} permission={permission} selectedApp={selectedApp} />
       {/* Plan bar ===== To Here */}
 
       {/* Task Overview ===== From Here */}
@@ -432,7 +427,7 @@ function TMSMain() {
                     <div>{task.Task_id}</div>
                     <div>{task.Task_name}</div>
                   </div>
-                  {Boolean(userGroups.includes(selectedApp.App_permit_Open)) ? (
+                  {permission.open ? (
                     <div className="d-flex justify-content-between ps-5 pe-5">
                       <div style={{ width: "16px", height: "16px" }}></div>
                       <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#EditTaskModal" onClick={() => setSelectedTask(task)}>
@@ -483,7 +478,7 @@ function TMSMain() {
                     <div>{task.Task_id}</div>
                     <div>{task.Task_name}</div>
                   </div>
-                  {Boolean(userGroups.includes(selectedApp.App_permit_toDoList)) ? (
+                  {permission.todo ? (
                     <div className="d-flex justify-content-between ps-5 pe-5">
                       <div style={{ width: "16px", height: "16px" }}></div>
                       <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#EditTaskModal" onClick={() => setSelectedTask(task)}>
@@ -526,7 +521,7 @@ function TMSMain() {
                     <div>{task.Task_id}</div>
                     <div>{task.Task_name}</div>
                   </div>
-                  {Boolean(userGroups.includes(selectedApp.App_permit_Doing)) ? (
+                  {permission.doing ? (
                     <div className="d-flex justify-content-between ps-5 pe-5">
                       <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#DemoteTaskModal" onClick={() => setSelectedTask(task)}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-caret-left-fill" viewBox="0 0 16 16">
@@ -573,7 +568,7 @@ function TMSMain() {
                     <div>{task.Task_id}</div>
                     <div>{task.Task_name}</div>
                   </div>
-                  {Boolean(userGroups.includes(selectedApp.App_permit_Done)) ? (
+                  {permission.done ? (
                     <div className="d-flex justify-content-between ps-5 pe-5">
                       <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#DemoteTaskModal" onClick={() => setSelectedTask(task)}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="bi bi-caret-left-fill" viewBox="0 0 16 16">

@@ -130,7 +130,7 @@ ${selectedTask.Task_notes}`
                     </div>
                     <div>
                       <label htmlFor="taskDescription" className="form-label mb-0 mt-1">
-                        Description
+                        Task Description
                       </label>
                       <textarea value={selectedTask.Task_description} disabled type="text" className="form-control" id="taskDescription" cols="40" rows="4" />
                     </div>
@@ -141,7 +141,7 @@ ${selectedTask.Task_notes}`
                     <label htmlFor="taskNotes" className="form-label mb-0 mt-1">
                       Notes
                     </label>
-                    <textarea value={selectedTask.Task_notes} disabled type="text" className="form-control" id="taskNotes" rows="4" />
+                    <textarea value={selectedTask.Task_notes} disabled type="text" className="form-control" id="taskNotes" rows="12" />
                   </div>
                   <div>
                     <label htmlFor="taskAddNotes" className="form-label mb-0 mt-1">
@@ -154,7 +154,7 @@ ${selectedTask.Task_notes}`
                       type="text"
                       className="form-control"
                       id="taskAddNotes"
-                      rows="4"
+                      rows="12"
                     />
                   </div>
                 </div>

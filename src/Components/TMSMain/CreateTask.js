@@ -53,7 +53,13 @@ Date/Time: ${dateTime}
     let mandatoryFieldsCheck = !Boolean(taskNameOC === "")
     let taskNameValidation = validator.isAscii(taskNameOC) // validates ascii only
     let taskNameValidation2 = !Boolean(taskNameOC[0] === " ") // validates that the starting char is not a space
-    let validation = Boolean(mandatoryFieldsCheck && taskNameValidation && taskNameValidation2)
+    let taskDescriptionValidation = false
+    if (taskDescription !== "") {
+      taskDescriptionValidation = validator.isAscii(taskDescription)
+    } else {
+      taskDescriptionValidation = true
+    }
+    let validation = Boolean(mandatoryFieldsCheck && taskNameValidation && taskNameValidation2 && taskDescriptionValidation)
 
     let dateTime = new Date()
 

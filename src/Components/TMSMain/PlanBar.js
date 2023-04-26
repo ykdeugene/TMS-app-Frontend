@@ -2,12 +2,12 @@ import React, { useContext, useState } from "react"
 import Axios from "axios"
 import DispatchContext from "../../DispatchContext"
 
-function PlanBar({ plans, fetchPlans, userGroups, selectedApp }) {
+function PlanBar({ plans, fetchPlans, permission }) {
   const [selectedPlan, setSelectedPlan] = useState("")
   const appDispatch = useContext(DispatchContext)
 
   function handleCloseEdit() {
-    if (Boolean(userGroups.includes(selectedApp.App_permit_Open))) {
+    if (permission.pm) {
       appDispatch({ type: "errorToast", data: "Plan not updated." })
     }
     var modal = document.getElementById("planModal")
@@ -110,25 +110,25 @@ function PlanBar({ plans, fetchPlans, userGroups, selectedApp }) {
                     <label htmlFor="editPlanStartDate" className="form-label mb-0 mt-1">
                       Start Date
                     </label>
-                    <input defaultValue={selectedPlan.Plan_startDate} disabled={!Boolean(userGroups.includes(selectedApp.App_permit_Open))} type="date" className="form-control" id="editPlanStartDate" />
+                    <input defaultValue={selectedPlan.Plan_startDate} disabled={!permission.pm} type="date" className="form-control" id="editPlanStartDate" />
                   </div>
                   <div className="pe-3">
                     <label htmlFor="editPlanEndDate" className="form-label mb-0 mt-1">
                       End Date
                     </label>
-                    <input defaultValue={selectedPlan.Plan_endDate} disabled={!Boolean(userGroups.includes(selectedApp.App_permit_Open))} type="date" className="form-control" id="editPlanEndDate" />
+                    <input defaultValue={selectedPlan.Plan_endDate} disabled={!permission.pm} type="date" className="form-control" id="editPlanEndDate" />
                   </div>
                   <div className="pe-3">
                     <label htmlFor="editPlanColour" className="form-label mb-0 mt-1">
                       Plan Colour
                     </label>
-                    <input defaultValue={selectedPlan.Plan_colour} disabled={!Boolean(userGroups.includes(selectedApp.App_permit_Open))} type="color" className="form-control form-control-color" id="editPlanColour" />
+                    <input defaultValue={selectedPlan.Plan_colour} disabled={!permission.pm} type="color" className="form-control form-control-color" id="editPlanColour" />
                   </div>
                 </div>
               </form>
             </div>
             <div className="modal-footer">
-              {Boolean(userGroups.includes(selectedApp.App_permit_Open)) ? (
+              {permission.pm ? (
                 <div>
                   <button onClick={handleCloseEdit} type="button" className="btn btn-secondary me-2" data-bs-dismiss="modal">
                     Cancel

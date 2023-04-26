@@ -50,7 +50,7 @@ function ViewTaskModal({ selectedTask, plans }) {
                     <label htmlFor="taskNotes" className="form-label mb-0 mt-1">
                       Notes
                     </label>
-                    <textarea value={selectedTask.Task_notes} disabled type="text" className="form-control" id="taskNotes" rows="9" />
+                    <textarea value={selectedTask.Task_notes} disabled type="text" className="form-control" id="taskNotes" rows="20" />
                   </div>
                 </div>
               </form>

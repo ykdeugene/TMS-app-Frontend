@@ -74,6 +74,7 @@ function CreateApplication({ fetchApplication }) {
     let mandatoryFieldsCheck = !Boolean(appNameOC === "" || appRNumOC === "")
     let rNumValidate = validator.isInt(appRNumOC, { gt: 0, allow_leading_zeroes: false })
     let appNameValidate = validator.isAlpha(appNameOC)
+    let appDescriptionValidate = validator.isAscii(appDescription)
     let dateValidate
 
     if (appStartDate === "" && appEndDate === "") {
@@ -84,7 +85,7 @@ function CreateApplication({ fetchApplication }) {
       dateValidate = Boolean(appEndDate >= appStartDate)
     }
 
-    let validation = Boolean(mandatoryFieldsCheck && rNumValidate && appNameValidate && dateValidate)
+    let validation = Boolean(mandatoryFieldsCheck && rNumValidate && appNameValidate && dateValidate && appDescriptionValidate)
 
     if (validation) {
       try {
@@ -108,7 +109,6 @@ function CreateApplication({ fetchApplication }) {
           appDispatch({ type: "loggedOut" })
           appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
         } else {
-          console.log(response.data)
           appDispatch({ type: "errorToast", data: "New Application not created. Please check input fields again." })
         }
       } catch (e) {
@@ -135,7 +135,7 @@ function CreateApplication({ fetchApplication }) {
               Fast Create
             </button>
           ) : (
-            <button className="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#createAppFormOC">
+            <button id="createAppButton" className="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#createAppFormOC">
               Create App
             </button>
           )}
@@ -152,25 +152,25 @@ function CreateApplication({ fetchApplication }) {
         <div className="offcanvas-body pt-0">
           <h5 className="offcanvas-title">Details</h5>
           <form id="createAppplicationForm">
-            <div className="d-flex justify-content-between">
-              <div>
+            <div className="d-flex">
+              <div className="pe-3">
                 <label htmlFor="applicationName" className="form-label mb-0 mt-1">
                   Name
                 </label>
-                <input onChange={e => setAppNameOC(e.target.value)} value={appNameOC} type="text" className="form-control" id="applicationName" style={{ width: "35vh" }} />
+                <input onChange={e => setAppNameOC(e.target.value)} value={appNameOC} type="text" className="form-control" id="applicationName" />
               </div>
               <div>
                 <label htmlFor="applicationRnumber" className="form-label mb-0 mt-1">
                   R-number
                 </label>
-                <input onChange={e => setAppRNumOC(e.target.value)} value={appRNumOC} type="text" className="form-control" id="applicationRnumber" style={{ width: "20vh" }} />
+                <input onChange={e => setAppRNumOC(e.target.value)} value={appRNumOC} type="text" className="form-control" id="applicationRnumber" />
               </div>
             </div>
             <div>
               <label htmlFor="applicationDescription" className="form-label mb-0 mt-1">
                 Description
               </label>
-              <textarea onChange={e => setAppDescription(e.target.value)} value={appDescription} type="text" className="form-control" id="applicationDescription" style={{ height: "15vh" }} />
+              <textarea onChange={e => setAppDescription(e.target.value)} value={appDescription} type="text" className="form-control" id="applicationDescription" rows="10" />
             </div>
             <div className="d-flex justify-content-between">
               <div>
@@ -186,6 +186,7 @@ function CreateApplication({ fetchApplication }) {
                 <input onChange={e => setAppEndDate(e.target.value)} type="date" className="form-control" id="applicationEndDate" style={{ width: "30vh" }} />
               </div>
             </div>
+            <hr className="border" />
             <h5 className="offcanvas-title pt-2">Access Management</h5>
             <div>
               <label htmlFor="Create" className="form-label mb-0 mt-1">
@@ -202,69 +203,65 @@ function CreateApplication({ fetchApplication }) {
                 })}
               </select>
             </div>
-            <div className="d-flex justify-content-between">
-              <div>
-                <label htmlFor="Open" className="form-label mb-0 mt-1">
-                  Open
-                </label>
-                <select onChange={e => setAppOpen(e.target.value)} className="form-select" id="Open" style={{ width: "30vh" }}>
-                  <option value=""></option>
-                  {groups.map(group => {
-                    return (
-                      <option key={"open" + group.group_name} value={group.group_name}>
-                        {group.group_name}
-                      </option>
-                    )
-                  })}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="To-Do" className="form-label mb-0 mt-1">
-                  To-Do
-                </label>
-                <select onChange={e => setAppToDo(e.target.value)} className="form-select" id="To-Do" style={{ width: "30vh" }}>
-                  <option value=""></option>
-                  {groups.map(group => {
-                    return (
-                      <option key={"toDo" + group.group_name} value={group.group_name}>
-                        {group.group_name}
-                      </option>
-                    )
-                  })}
-                </select>
-              </div>
+            <div>
+              <label htmlFor="Open" className="form-label mb-0 mt-1">
+                Open
+              </label>
+              <select onChange={e => setAppOpen(e.target.value)} className="form-select" id="Open" style={{ width: "30vh" }}>
+                <option value=""></option>
+                {groups.map(group => {
+                  return (
+                    <option key={"open" + group.group_name} value={group.group_name}>
+                      {group.group_name}
+                    </option>
+                  )
+                })}
+              </select>
             </div>
-            <div className="d-flex justify-content-between">
-              <div>
-                <label htmlFor="Doing" className="form-label mb-0 mt-1">
-                  Doing
-                </label>
-                <select onChange={e => setAppDoing(e.target.value)} className="form-select" id="Doing" style={{ width: "30vh" }}>
-                  <option value=""></option>
-                  {groups.map(group => {
-                    return (
-                      <option key={"doing" + group.group_name} value={group.group_name}>
-                        {group.group_name}
-                      </option>
-                    )
-                  })}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="Done" className="form-label mb-0 mt-1">
-                  Done
-                </label>
-                <select onChange={e => setAppDone(e.target.value)} className="form-select" id="Done" style={{ width: "30vh" }}>
-                  <option value=""></option>
-                  {groups.map(group => {
-                    return (
-                      <option key={"done" + group.group_name} value={group.group_name}>
-                        {group.group_name}
-                      </option>
-                    )
-                  })}
-                </select>
-              </div>
+            <div>
+              <label htmlFor="To-Do" className="form-label mb-0 mt-1">
+                To-Do
+              </label>
+              <select onChange={e => setAppToDo(e.target.value)} className="form-select" id="To-Do" style={{ width: "30vh" }}>
+                <option value=""></option>
+                {groups.map(group => {
+                  return (
+                    <option key={"toDo" + group.group_name} value={group.group_name}>
+                      {group.group_name}
+                    </option>
+                  )
+                })}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="Doing" className="form-label mb-0 mt-1">
+                Doing
+              </label>
+              <select onChange={e => setAppDoing(e.target.value)} className="form-select" id="Doing" style={{ width: "30vh" }}>
+                <option value=""></option>
+                {groups.map(group => {
+                  return (
+                    <option key={"doing" + group.group_name} value={group.group_name}>
+                      {group.group_name}
+                    </option>
+                  )
+                })}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="Done" className="form-label mb-0 mt-1">
+                Done
+              </label>
+              <select onChange={e => setAppDone(e.target.value)} className="form-select" id="Done" style={{ width: "30vh" }}>
+                <option value=""></option>
+                {groups.map(group => {
+                  return (
+                    <option key={"done" + group.group_name} value={group.group_name}>
+                      {group.group_name}
+                    </option>
+                  )
+                })}
+              </select>
             </div>
             <button onClick={handleSubmitCreateApplication} type="button" className="btn btn-primary mt-3" data-bs-dismiss="offcanvas">
               Create
