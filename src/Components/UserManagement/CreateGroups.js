@@ -1,5 +1,6 @@
 import React, { useState, useContext } from "react"
 import Axios from "axios"
+import validator from "validator"
 import DispatchContext from "../../DispatchContext"
 
 function CreateGroup({ setUserTable }) {
@@ -9,22 +10,28 @@ function CreateGroup({ setUserTable }) {
 
   // function for create group button
   async function handleCreateGroup() {
-    if (c_groupname !== "") {
-      try {
-        const new_group = c_groupname.trim()
-        const response = await Axios.post("/group/create_group_admin", { new_group })
-        if (response.data === true) {
-          appDispatch({ type: "successToast", data: "New group is created." })
-          setc_groupname("")
-          setUserTable()
-        } else if (response.data === "A100") {
-          appDispatch({ type: "loggedOut" })
-          appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
-        } else {
-          appDispatch({ type: "errorToast", data: "Group not created. Please check for duplicate group name." })
+    let validation = validator.isAlphanumeric(c_groupname)
+
+    if (validation) {
+      if (c_groupname !== "") {
+        try {
+          const new_group = c_groupname.trim()
+          const response = await Axios.post("/group/create_group_admin", { new_group })
+          if (response.data === true) {
+            appDispatch({ type: "successToast", data: "New group is created." })
+            setc_groupname("")
+            setUserTable()
+          } else if (response.data === "A100") {
+            appDispatch({ type: "loggedOut" })
+            appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
+          } else {
+            appDispatch({ type: "errorToast", data: "Group not created. Please check for duplicate group name." })
+          }
+        } catch (e) {
+          appDispatch({ type: "errorToast", data: "Please contact an administrator." })
         }
-      } catch (e) {
-        appDispatch({ type: "errorToast", data: "Please contact an administrator." })
+      } else {
+        appDispatch({ type: "errorToast", data: "Please check input fields again." })
       }
     } else {
       appDispatch({ type: "errorToast", data: "Please check input fields again." })

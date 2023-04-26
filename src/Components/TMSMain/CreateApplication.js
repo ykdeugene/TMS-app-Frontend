@@ -13,6 +13,7 @@ function CreateApplication({ fetchApplication }) {
   const [appDescription, setAppDescription] = useState("")
   const [appStartDate, setAppStartDate] = useState(null)
   const [appEndDate, setAppEndDate] = useState(null)
+  const [appCreate, setAppCreate] = useState("")
   const [appOpen, setAppOpen] = useState("")
   const [appToDo, setAppToDo] = useState("")
   const [appDoing, setAppDoing] = useState("")
@@ -47,7 +48,7 @@ function CreateApplication({ fetchApplication }) {
     if (validation) {
       try {
         const [appDescription, appStartDate, appEndDate, appOpen, appToDo, appDoing, appDone] = ["", "", "", "", "", "", ""]
-        const response = await Axios.post("/tms/create_application", { appName, appRNum, appDescription, appStartDate, appEndDate, appOpen, appToDo, appDoing, appDone })
+        const response = await Axios.post("/tms/create_application", { appName, appRNum, appDescription, appStartDate, appEndDate, appCreate, appOpen, appToDo, appDoing, appDone })
         if (response.data === true) {
           appDispatch({ type: "successToast", data: "New Application is created." })
           setAppName("")
@@ -87,7 +88,7 @@ function CreateApplication({ fetchApplication }) {
 
     if (validation) {
       try {
-        const response = await Axios.post("/tms/create_application", { appNameOC, appRNumOC, appDescription, appStartDate, appEndDate, appOpen, appToDo, appDoing, appDone })
+        const response = await Axios.post("/tms/create_application", { appNameOC, appRNumOC, appDescription, appStartDate, appEndDate, appCreate, appOpen, appToDo, appDoing, appDone })
 
         if (response.data === true) {
           appDispatch({ type: "successToast", data: "New Application is created." })
@@ -96,6 +97,7 @@ function CreateApplication({ fetchApplication }) {
           setAppDescription("")
           setAppStartDate(null)
           setAppEndDate(null)
+          setAppCreate("")
           setAppOpen("")
           setAppToDo("")
           setAppDoing("")
@@ -185,6 +187,21 @@ function CreateApplication({ fetchApplication }) {
               </div>
             </div>
             <h5 className="offcanvas-title pt-2">Access Management</h5>
+            <div>
+              <label htmlFor="Create" className="form-label mb-0 mt-1">
+                Create
+              </label>
+              <select onChange={e => setAppCreate(e.target.value)} className="form-select" id="Create" style={{ width: "30vh" }}>
+                <option value=""></option>
+                {groups.map(group => {
+                  return (
+                    <option key={"create" + group.group_name} value={group.group_name}>
+                      {group.group_name}
+                    </option>
+                  )
+                })}
+              </select>
+            </div>
             <div className="d-flex justify-content-between">
               <div>
                 <label htmlFor="Open" className="form-label mb-0 mt-1">

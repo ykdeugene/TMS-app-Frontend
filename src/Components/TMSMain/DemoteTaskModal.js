@@ -1,56 +1,81 @@
-import React, { useEffect, useState } from "react"
+import React, { useState } from "react"
 import Axios from "axios"
 import DispatchContext from "../../DispatchContext"
 import { useContext } from "react"
 
 function DemoteTaskModal({ selectedTask, plans, username, fetchTasks, resetSetTask }) {
   const appDispatch = useContext(DispatchContext)
-  const [taskUpdatedPlan, setTaskUpdatedPlan] = useState("not set")
+  const [taskUpdatedPlan, setTaskUpdatedPlan] = useState(false)
   const [taskNotes, setTaskNotes] = useState("")
 
-  async function handleDemoteApplication() {
+  async function handleDemoteTask() {
     const taskNewState = selectedTask.Task_state - 1
 
     let taskNewPlan
-    taskUpdatedPlan === "not set" ? (taskNewPlan = selectedTask.Task_plan) : (taskNewPlan = taskUpdatedPlan)
+
+    if (selectedTask.Task_state === 2 || selectedTask.Task_state === 3) {
+      taskNewPlan = selectedTask.Task_plan
+    } else {
+      if (taskUpdatedPlan || taskUpdatedPlan === "") {
+        taskNewPlan = taskUpdatedPlan
+      } else {
+        taskNewPlan = selectedTask.Task_plan
+      }
+    }
+    console.log(taskNewPlan)
 
     let dateTime = new Date()
 
-    const taskNotesStarter = "==============================\n"
-    const taskNotesSignature = `\n------------------------------\nuserID: ${username}\nstate: ${["Open", "To-do", "Doing", "Done", "Closed"][taskNewState - 1]}\nDate/Time: ${dateTime}\n==============================\n`
-
-    const taskNotesComplete = taskNotesStarter + taskNotes + taskNotesSignature + selectedTask.Task_notes
+    const taskNotesComplete = `
+==============================
+Notes: ${taskNotes}
+------------------------------
+UserID: ${username}
+Action: Demote Task to ${["Open", "To-do", "Doing", "Done", "Closed"][taskNewState - 1]} state
+Date/Time: ${dateTime}
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+${selectedTask.Task_notes}`
 
     let taskOwner = username
     let taskID = selectedTask.Task_id
 
-    try {
-      const response = await Axios.put(`/tms/update_task_status`, { taskNotesComplete, taskNewPlan, taskNewState, taskOwner, taskID })
-      if (response.data === "A100") {
-        appDispatch({ type: "loggedOut" })
-        appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
-        return
+    let validation = !Boolean(taskNewPlan === "" || taskNewPlan === false)
+
+    if (validation) {
+      try {
+        const response = await Axios.put(`/tms/update_task_status`, { taskNotesComplete, taskNewPlan, taskNewState, taskOwner, taskID })
+        if (response.data === "A100") {
+          appDispatch({ type: "loggedOut" })
+          appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
+          return
+        }
+        if (response.data === true) {
+          appDispatch({ type: "successToast", data: `${selectedTask.Task_id} has been demoted.` })
+          var modal = document.getElementById("DemoteTaskModal")
+          var form = modal.querySelector("form")
+          form.reset()
+          fetchTasks()
+          resetSetTask()
+          setTaskUpdatedPlan(false)
+          setTaskNotes("")
+          return
+        } else {
+          appDispatch({ type: "errorToast", data: `No updates made to ${selectedTask.Task_id}` })
+          return
+        }
+      } catch (e) {
+        console.log(e)
+        appDispatch({ type: "errorToast", data: "Please contact an administrator. (handleUpdateApplication catch(e))" })
       }
-      if (response.data === true) {
-        appDispatch({ type: "successToast", data: `${selectedTask.Task_id} has been demoted.` })
-        var modal = document.getElementById("DemoteTaskModal")
-        var form = modal.querySelector("form")
-        form.reset()
-        fetchTasks()
-        resetSetTask()
-        return
-      } else {
-        appDispatch({ type: "errorToast", data: `No updates made to ${selectedTask.Task_id}` })
-        return
-      }
-    } catch (e) {
-      console.log(e)
-      appDispatch({ type: "errorToast", data: "Please contact an administrator. (handleUpdateApplication catch(e))" })
+    } else {
+      appDispatch({ type: "errorToast", data: `No updates made to ${selectedTask.Task_id}. Please check input fields again.` })
+      resetSetTask()
+      setTaskUpdatedPlan(false)
     }
   }
 
   function closeTaskModal() {
-    setTaskUpdatedPlan("not set")
+    setTaskUpdatedPlan(false)
     setTaskNotes("")
     var modal = document.getElementById("DemoteTaskModal")
     var form = modal.querySelector("form")
@@ -65,7 +90,7 @@ function DemoteTaskModal({ selectedTask, plans, username, fetchTasks, resetSetTa
           <div className="modal-content">
             <div className="modal-header pt-1 pb-1">
               <div>
-                <h1 className="modal-title fs-3">{`Promote Task - ${selectedTask.Task_name} (${["Open", "To-do", "Doing", "Done", "Closed"][selectedTask.Task_state - 1]})`}</h1>
+                <h1 className="modal-title fs-3">{`Demote Task - ${selectedTask.Task_name} (${["Open", "To-do", "Doing", "Done", "Closed"][selectedTask.Task_state - 1]})`}</h1>
                 Created by {selectedTask.Task_creator} on {selectedTask.Task_createDate}
               </div>
               <button type="button" className="ms-2 btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -102,6 +127,7 @@ function DemoteTaskModal({ selectedTask, plans, username, fetchTasks, resetSetTa
                         id="planDropDownList"
                         style={{ width: "30vh" }}
                       >
+                        <option value="">No Plans Selected</option>
                         {plans.map(plan => {
                           return (
                             <option selected={selectedTask.Task_plan === plan.Plan_MVP_name} key={plan.Plan_MVP_name} value={plan.Plan_MVP_name}>
@@ -147,7 +173,7 @@ function DemoteTaskModal({ selectedTask, plans, username, fetchTasks, resetSetTa
               <button onClick={closeTaskModal} type="button" className="btn btn-secondary" data-bs-dismiss="modal">
                 Cancel
               </button>
-              <button onClick={handleDemoteApplication} type="button" className="btn btn-primary" data-bs-dismiss="modal">
+              <button onClick={handleDemoteTask} type="button" className="btn btn-primary" data-bs-dismiss="modal">
                 Confirm
               </button>
             </div>

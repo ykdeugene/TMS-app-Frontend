@@ -22,7 +22,7 @@ function TMSMain() {
   const [tasks, setTasks] = useState([])
   const [username, setUsername] = useState("")
   const [userGroups, setUserGroups] = useState([])
-  const [trigger, setTrigger] = useState(false)
+  const [resetSelectedApp, setResetSelectedApp] = useState(false)
 
   async function getUsername() {
     try {
@@ -141,6 +141,7 @@ function TMSMain() {
     let description = document.getElementById("editApplicationDescription").value
     let startDate = document.getElementById("editApplicationStartDate").value
     let endDate = document.getElementById("editApplicationEndDate").value
+    let create = document.getElementById("editApplicationCreate").value
     let open = document.getElementById("editApplicationOpen").value
     let toDo = document.getElementById("editApplicationToDo").value
     let doing = document.getElementById("editApplicationDoing").value
@@ -159,7 +160,7 @@ function TMSMain() {
 
     if (validation) {
       try {
-        const response = await Axios.put(`/tms/update_application`, { description, startDate, endDate, open, toDo, doing, done, appName })
+        const response = await Axios.put(`/tms/update_application`, { description, startDate, endDate, create, open, toDo, doing, done, appName })
         if (response.data === "A100") {
           appDispatch({ type: "loggedOut" })
           appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
@@ -172,9 +173,8 @@ function TMSMain() {
           var form = modal.querySelector("form")
           form.reset()
           fetchApplication()
-          console.log(`before setting 1 ${trigger}`)
-          setTrigger(true)
-          console.log(`before setting 2 ${trigger}`)
+          // setResetSelectedApp(true)
+          setSelectedEditApp("")
           return
         } else {
           appDispatch({ type: "errorToast", data: `No updates made to ${selectedEditApp.App_Acronym}` })
@@ -195,12 +195,12 @@ function TMSMain() {
   useEffect(() => {
     applications.map(application => {
       if (application.App_Acronym === selectedEditApp.App_Acronym) {
-        console.log(`after setting 3 ${trigger}`)
         setSelectedApp(application)
-        setTrigger(false)
+        setSelectedEditApp("")
+        setResetSelectedApp(false)
       }
     })
-  }, [trigger])
+  }, [resetSelectedApp])
 
   useEffect(() => {
     fetchApplication()
@@ -240,6 +240,7 @@ function TMSMain() {
                     data-bs-target="#appModal"
                     onClick={() => {
                       setSelectedEditApp(application)
+                      setSelectedApp("")
                     }}
                   >
                     <svg className="bi bi-wrench" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16">
@@ -258,7 +259,7 @@ function TMSMain() {
 
       {/* Modal for Edit Application ===== From Here */}
       <div className="modal fade" id="appModal" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div className="modal-dialog">
+        <div className="modal-dialog modal-lg">
           <div className="modal-content">
             <div className="modal-header pb-2">
               <h1 className="modal-title fs-4" id="appNameModal">
@@ -274,42 +275,58 @@ function TMSMain() {
                     <label htmlFor="editApplicationName" className="form-label mb-0 mt-1">
                       Name
                     </label>
-                    <input defaultValue={selectedEditApp.App_Acronym} disabled type="text" className="form-control" id="editApplicationName" style={{ width: "35vh" }} />
+                    <input defaultValue={selectedEditApp.App_Acronym} disabled type="text" className="form-control" id="editApplicationName" />
                   </div>
                   <div>
                     <label htmlFor="editApplicationRnumber" className="form-label mb-0 mt-1">
                       R-number
                     </label>
-                    <input defaultValue={selectedEditApp.App_Rnumber} disabled className="form-control" id="editApplicationRnumber" style={{ width: "20vh" }} />
+                    <input defaultValue={selectedEditApp.App_Rnumber} disabled className="form-control" id="editApplicationRnumber" />
                   </div>
                 </div>
                 <div>
                   <label htmlFor="editApplicationDescription" className="form-label mb-0 mt-1">
                     Description
                   </label>
-                  <textarea defaultValue={selectedEditApp.App_Description} type="text" className="form-control" id="editApplicationDescription" style={{ height: "15vh" }} />
+                  <textarea defaultValue={selectedEditApp.App_Description} type="text" className="form-control" id="editApplicationDescription" rows="7" />
                 </div>
                 <div className="d-flex">
                   <div className="pe-3">
                     <label htmlFor="editApplicationStartDate" className="form-label mb-0 mt-1">
                       Start Date
                     </label>
-                    <input defaultValue={selectedEditApp.App_startDate} type="date" className="form-control" id="editApplicationStartDate" style={{ width: "30vh" }} />
+                    <input defaultValue={selectedEditApp.App_startDate} type="date" className="form-control" id="editApplicationStartDate" />
                   </div>
                   <div>
                     <label htmlFor="editApplicationEndDate" className="form-label mb-0 mt-1">
                       End Date
                     </label>
-                    <input defaultValue={selectedEditApp.App_endDate} type="date" className="form-control" id="editApplicationEndDate" style={{ width: "30vh" }} />
+                    <input defaultValue={selectedEditApp.App_endDate} type="date" className="form-control" id="editApplicationEndDate" />
                   </div>
                 </div>
                 <h5 className="offcanvas-title pt-2">Access Management</h5>
                 <div className="d-flex">
                   <div className="pe-3">
+                    <label htmlFor="editApplicationCreate" className="form-label mb-0 mt-1">
+                      Create
+                    </label>
+                    <select defaultValue={selectedEditApp.App_permit_Create} className="form-select" id="editApplicationCreate">
+                      <option value=""></option>
+                      {groups.map(group => {
+                        return (
+                          <option selected={group.group_name === selectedEditApp.App_permit_Create} key={"create" + group.group_name} value={group.group_name}>
+                            {/* <option key={"create" + group.group_name} value={group.group_name}> */}
+                            {group.group_name}
+                          </option>
+                        )
+                      })}
+                    </select>
+                  </div>
+                  <div className="pe-3">
                     <label htmlFor="editApplicationOpen" className="form-label mb-0 mt-1">
                       Open
                     </label>
-                    <select defaultValue={selectedEditApp.App_permit_Open} className="form-select" id="editApplicationOpen" style={{ width: "30vh" }}>
+                    <select defaultValue={selectedEditApp.App_permit_Open} className="form-select" id="editApplicationOpen">
                       <option value=""></option>
                       {groups.map(group => {
                         return (
@@ -325,7 +342,7 @@ function TMSMain() {
                     <label htmlFor="editApplicationToDo" className="form-label mb-0 mt-1">
                       To-Do
                     </label>
-                    <select defaultValue={selectedEditApp.App_permit_toDoList} className="form-select" id="editApplicationToDo" style={{ width: "30vh" }}>
+                    <select defaultValue={selectedEditApp.App_permit_toDoList} className="form-select" id="editApplicationToDo">
                       <option value=""></option>
                       {groups.map(group => {
                         return (
@@ -343,7 +360,7 @@ function TMSMain() {
                     <label htmlFor="editApplicationDoing" className="form-label mb-0 mt-1">
                       Doing
                     </label>
-                    <select defaultValue={selectedEditApp.App_permit_Doing} className="form-select" id="editApplicationDoing" style={{ width: "30vh" }}>
+                    <select defaultValue={selectedEditApp.App_permit_Doing} className="form-select" id="editApplicationDoing">
                       <option value=""></option>
                       {groups.map(group => {
                         return (
@@ -359,7 +376,7 @@ function TMSMain() {
                     <label htmlFor="editApplicationDone" className="form-label mb-0 mt-1">
                       Done
                     </label>
-                    <select defaultValue={selectedEditApp.App_permit_Done} className="form-select" id="editApplicationDone" style={{ width: "30vh" }}>
+                    <select defaultValue={selectedEditApp.App_permit_Done} className="form-select" id="editApplicationDone">
                       <option value=""></option>
                       {groups.map(group => {
                         return (
@@ -392,8 +409,8 @@ function TMSMain() {
         <h4 className="ps-3" value="selectedApp.App_Acronym">
           {selectedApp.App_Acronym}
         </h4>
-        {Boolean(userGroups.includes(selectedApp.App_permit_Open)) ? <CreatePlan applicationName={selectedApp.App_Acronym} fetchPlans={fetchPlans} plans={plans} /> : <></>}
-        {Boolean(userGroups.includes("Project Lead")) ? <CreateTask username={username} application={selectedApp} fetchTasks={fetchTasks} fetchApplication={fetchApplication} plans={plans} /> : <></>}
+        {Boolean(userGroups.includes("Project Manager")) && selectedApp !== "" ? <CreatePlan applicationName={selectedApp.App_Acronym} fetchPlans={fetchPlans} plans={plans} /> : <></>}
+        {Boolean(userGroups.includes("Project Lead") || userGroups.includes(selectedApp.App_permit_Create)) && selectedApp !== "" ? <CreateTask username={username} application={selectedApp} fetchTasks={fetchTasks} fetchApplication={fetchApplication} plans={plans} /> : <></>}
       </div>
       {/* Section for create plan/task ===== To Here */}
 
@@ -441,7 +458,7 @@ function TMSMain() {
                   ) : (
                     <div className="d-flex justify-content-center ps-5 pe-5">
                       <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#ViewTaskModal" onClick={() => setSelectedTask(task)}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-eye-fill" viewBox="0 0 16 16">
                           <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
                           <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
                         </svg>
@@ -484,7 +501,7 @@ function TMSMain() {
                   ) : (
                     <div className="d-flex justify-content-center ps-5 pe-5">
                       <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#ViewTaskModal" onClick={() => setSelectedTask(task)}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-eye-fill" viewBox="0 0 16 16">
                           <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
                           <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
                         </svg>
@@ -531,7 +548,7 @@ function TMSMain() {
                   ) : (
                     <div className="d-flex justify-content-center ps-5 pe-5">
                       <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#ViewTaskModal" onClick={() => setSelectedTask(task)}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-eye-fill" viewBox="0 0 16 16">
                           <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
                           <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
                         </svg>
@@ -578,7 +595,7 @@ function TMSMain() {
                   ) : (
                     <div className="d-flex justify-content-center ps-5 pe-5">
                       <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#ViewTaskModal" onClick={() => setSelectedTask(task)}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-eye-fill" viewBox="0 0 16 16">
                           <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
                           <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
                         </svg>
@@ -605,7 +622,7 @@ function TMSMain() {
                   </div>
                   <div className="d-flex justify-content-center ps-5 pe-5">
                     <button className="btn p-0" type="button" data-bs-toggle="modal" data-bs-target="#ViewTaskModal" onClick={() => setSelectedTask(task)}>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-eye-fill" viewBox="0 0 16 16">
                         <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
                         <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
                       </svg>
@@ -619,10 +636,10 @@ function TMSMain() {
         </div>
       </div>
       {/* Task Overview ===== To Here */}
-      <PromoteTaskModal fetchTasks={fetchTasks} username={username} selectedTask={selectedTask} plans={plans} resetSetTask={resetSetTask} />
-      <EditTaskModal fetchTasks={fetchTasks} username={username} selectedTask={selectedTask} plans={plans} resetSetTask={resetSetTask} />
-      <DemoteTaskModal fetchTasks={fetchTasks} username={username} selectedTask={selectedTask} plans={plans} resetSetTask={resetSetTask} />
-      <ViewTaskModal selectedTask={selectedTask} plans={plans} />
+      <PromoteTaskModal selectedApp={selectedApp} fetchTasks={fetchTasks} username={username} selectedTask={selectedTask} plans={plans} resetSetTask={resetSetTask} />
+      <EditTaskModal selectedApp={selectedApp} fetchTasks={fetchTasks} username={username} selectedTask={selectedTask} plans={plans} resetSetTask={resetSetTask} />
+      <DemoteTaskModal selectedApp={selectedApp} fetchTasks={fetchTasks} username={username} selectedTask={selectedTask} plans={plans} resetSetTask={resetSetTask} />
+      <ViewTaskModal selectedApp={selectedApp} selectedTask={selectedTask} plans={plans} />
     </div>
   )
 }

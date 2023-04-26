@@ -12,7 +12,8 @@ function CreatePlan({ applicationName, fetchPlans, plans }) {
 
   async function handleCreatePlan() {
     let mandatoryFieldsCheck = !Boolean(planName === "" || planStartDate === "" || planEndDate === "")
-    let planNameValidation = validator.isAlphanumeric(planName)
+    let planNameValidation = validator.isAscii(planName)
+    let planNameValidation2 = !Boolean(planName[0] === " ")
     let dateValidate
 
     if (planStartDate === "" && planEndDate === "") {
@@ -21,7 +22,7 @@ function CreatePlan({ applicationName, fetchPlans, plans }) {
       dateValidate = Boolean(planEndDate >= planStartDate)
     }
 
-    let validation = Boolean(mandatoryFieldsCheck && planNameValidation && dateValidate)
+    let validation = Boolean(mandatoryFieldsCheck && planNameValidation && planNameValidation2 && dateValidate)
 
     if (validation) {
       try {

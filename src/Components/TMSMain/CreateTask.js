@@ -17,9 +17,18 @@ function CreateTask({ application, fetchTasks, plans, username, fetchApplication
   async function handleFastCreateTask() {
     let validation = validator.isAlphanumeric(taskName)
 
+    let dateTime = new Date()
+
+    let taskNotes = `
+==============================
+UserID: ${username}
+State: Task Created.
+Date/Time: ${dateTime}
+==============================`
+
     if (validation) {
       try {
-        const response = await Axios.post("/tms/create_task", { taskName, taskDescription, taskPlan, appName, taskCreator, taskOwner, taskCreateDate })
+        const response = await Axios.post("/tms/create_task", { taskName, taskNotes, taskDescription, taskPlan, appName, taskCreator, taskOwner, taskCreateDate })
         if (response.data === true) {
           appDispatch({ type: "successToast", data: "New Task is created." })
           setTaskName("")
@@ -42,12 +51,22 @@ function CreateTask({ application, fetchTasks, plans, username, fetchApplication
 
   async function handleCreateTaskOC() {
     let mandatoryFieldsCheck = !Boolean(taskNameOC === "")
-    let taskNameValidation = validator.isAlphanumeric(taskNameOC)
-    let validation = Boolean(mandatoryFieldsCheck && taskNameValidation)
+    let taskNameValidation = validator.isAscii(taskNameOC) // validates ascii only
+    let taskNameValidation2 = !Boolean(taskNameOC[0] === " ") // validates that the starting char is not a space
+    let validation = Boolean(mandatoryFieldsCheck && taskNameValidation && taskNameValidation2)
+
+    let dateTime = new Date()
+
+    let taskNotes = `
+==============================
+UserID: ${username}
+Action: Task Created.
+Date/Time: ${dateTime}
+==============================`
 
     if (validation) {
       try {
-        const response = await Axios.post("/tms/create_task", { taskNameOC, taskDescription, taskPlan, appName, taskCreator, taskOwner, taskCreateDate })
+        const response = await Axios.post("/tms/create_task", { taskNameOC, taskNotes, taskDescription, taskPlan, appName, taskCreator, taskOwner, taskCreateDate })
         if (response.data === true) {
           appDispatch({ type: "successToast", data: "New Task is created." })
           setTaskNameOC("")
@@ -72,7 +91,10 @@ function CreateTask({ application, fetchTasks, plans, username, fetchApplication
 
   return (
     <>
-      <div className="input-group" style={{ width: "60vh" }}>
+      <button className="btn btn-secondary" data-bs-toggle="offcanvas" data-bs-target="#createTaskFormOC">
+        Create Task
+      </button>
+      {/* <div className="input-group" style={{ width: "60vh" }}>
         <input
           onChange={e => {
             setTaskName(e.target.value)
@@ -92,7 +114,7 @@ function CreateTask({ application, fetchTasks, plans, username, fetchApplication
             Fast Create
           </button>
         )}
-      </div>
+      </div> */}
 
       <div className="offcanvas offcanvas-start" id="createTaskFormOC" style={{ width: "70vh" }}>
         <div className="offcanvas-header pb-1">
@@ -113,7 +135,7 @@ function CreateTask({ application, fetchTasks, plans, username, fetchApplication
                 Plan
               </label>
               <select onChange={e => setTaskPlan(e.target.value)} value={taskPlan} className="form-select" id="planDropDownList" style={{ width: "30vh" }}>
-                <option value=""></option>
+                <option value="">No Plans Selected</option>
                 {plans.map(plan => {
                   return <option key={plan.Plan_MVP_name}>{plan.Plan_MVP_name}</option>
                 })}

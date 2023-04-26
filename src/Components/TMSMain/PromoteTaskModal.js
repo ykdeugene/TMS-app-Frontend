@@ -4,52 +4,100 @@ import DispatchContext from "../../DispatchContext"
 
 function PromoteTaskModal({ selectedTask, username, fetchTasks, plans, resetSetTask }) {
   const appDispatch = useContext(DispatchContext)
-  const [taskUpdatedPlan, setTaskUpdatedPlan] = useState("not set")
+  const [taskUpdatedPlan, setTaskUpdatedPlan] = useState(false)
   const [taskNotes, setTaskNotes] = useState("")
+
+  async function sendEmail() {
+    let taskID = selectedTask.Task_id
+    let taskName = selectedTask.Task_name
+    let taskOwner = username
+
+    try {
+      const response = await Axios.post(`/tms/send_email`, { taskID, taskName, taskOwner })
+      if (response) {
+        appDispatch({ type: "successToast", data: `Project Lead groups has been notified.` })
+      }
+    } catch (e) {
+      console.log(e)
+      appDispatch({ type: "errorToast", data: `Please contact an administrator. (sendEmail catch(e))` })
+    }
+  }
 
   async function handlePromoteTask() {
     const taskNewState = selectedTask.Task_state + 1
 
     let taskNewPlan
-    taskUpdatedPlan === "not set" ? (taskNewPlan = selectedTask.Task_plan) : (taskNewPlan = taskUpdatedPlan)
+
+    if (selectedTask.Task_state === 2 || selectedTask.Task_state === 3) {
+      taskNewPlan = selectedTask.Task_plan
+    } else {
+      if (taskUpdatedPlan || taskUpdatedPlan === "") {
+        taskNewPlan = taskUpdatedPlan
+      } else {
+        taskNewPlan = selectedTask.Task_plan
+      }
+    }
 
     let dateTime = new Date()
 
-    const taskNotesStarter = "==============================\n"
-    const taskNotesSignature = `\n------------------------------\nuserID: ${username}\nstate: ${["Open", "To-do", "Doing", "Done", "Closed"][taskNewState - 1]}\nDate/Time: ${dateTime}\n==============================\n`
-
-    const taskNotesComplete = taskNotesStarter + taskNotes + taskNotesSignature + selectedTask.Task_notes
+    const taskNotesComplete = `
+==============================
+Notes: ${taskNotes}
+------------------------------
+UserID: ${username}
+Action: Promote Task to ${["Open", "To-do", "Doing", "Done", "Closed"][taskNewState - 1]} state
+Date/Time: ${dateTime}
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+${selectedTask.Task_notes}`
 
     let taskOwner = username
     let taskID = selectedTask.Task_id
 
-    try {
-      const response = await Axios.put(`/tms/update_task_status`, { taskNotesComplete, taskNewPlan, taskNewState, taskOwner, taskID })
-      if (response.data === "A100") {
-        appDispatch({ type: "loggedOut" })
-        appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
-        return
+    let validation = !Boolean(taskNewPlan === "" || taskNewPlan === false)
+
+    if (validation) {
+      try {
+        const response = await Axios.put(`/tms/update_task_status`, { taskNotesComplete, taskNewPlan, taskNewState, taskOwner, taskID })
+        if (response.data === "A100") {
+          appDispatch({ type: "loggedOut" })
+          appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
+          return
+        }
+
+        if (response.data === true) {
+          appDispatch({ type: "successToast", data: `${selectedTask.Task_id} has been promoted.` })
+          var modal = document.getElementById("PromoteTaskModal")
+          var form = modal.querySelector("form")
+          form.reset()
+          setTaskNotes("")
+          setTaskUpdatedPlan(false)
+
+          if (taskNewState === 5) {
+            sendEmail()
+            fetchTasks()
+            resetSetTask()
+          } else {
+            fetchTasks()
+            resetSetTask()
+          }
+
+          return
+        } else {
+          appDispatch({ type: "errorToast", data: `No updates made to ${selectedTask.Task_id}` })
+          return
+        }
+      } catch (e) {
+        console.log(e)
+        appDispatch({ type: "errorToast", data: "Please contact an administrator. (handleUpdateApplication catch(e))" })
       }
-      if (response.data === true) {
-        appDispatch({ type: "successToast", data: `${selectedTask.Task_id} has been promoted.` })
-        var modal = document.getElementById("PromoteTaskModal")
-        var form = modal.querySelector("form")
-        form.reset()
-        fetchTasks()
-        resetSetTask()
-        return
-      } else {
-        appDispatch({ type: "errorToast", data: `No updates made to ${selectedTask.Task_id}` })
-        return
-      }
-    } catch (e) {
-      console.log(e)
-      appDispatch({ type: "errorToast", data: "Please contact an administrator. (handleUpdateApplication catch(e))" })
+    } else {
+      appDispatch({ type: "errorToast", data: `No updates made to ${selectedTask.Task_id}. Please check input fields again.` })
+      resetSetTask()
     }
   }
 
   function closeTaskModal() {
-    setTaskUpdatedPlan("not set")
+    setTaskUpdatedPlan(false)
     setTaskNotes("")
     var modal = document.getElementById("PromoteTaskModal")
     var form = modal.querySelector("form")
@@ -96,14 +144,16 @@ function PromoteTaskModal({ selectedTask, username, fetchTasks, plans, resetSetT
                         onChange={e => {
                           setTaskUpdatedPlan(e.target.value)
                         }}
-                        disabled={!Boolean(selectedTask.Task_state === 1 || selectedTask.Task_state === 4)}
+                        disabled={Boolean(selectedTask.Task_state === 2 || selectedTask.Task_state === 3 || selectedTask.Task_state === 4)}
                         className="form-select"
                         id="planDropDownList"
                         style={{ width: "30vh" }}
                       >
+                        <option value="">No Plans Selected</option>
                         {plans.map(plan => {
                           return (
                             <option selected={selectedTask.Task_plan === plan.Plan_MVP_name} key={plan.Plan_MVP_name} value={plan.Plan_MVP_name}>
+                              {/* <option key={plan.Plan_MVP_name} value={plan.Plan_MVP_name}> */}
                               {plan.Plan_MVP_name}
                             </option>
                           )

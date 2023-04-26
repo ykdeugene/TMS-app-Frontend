@@ -1,25 +1,39 @@
-import React, { useEffect, useState } from "react"
+import React, { useState } from "react"
 import Axios from "axios"
 import DispatchContext from "../../DispatchContext"
 import { useContext } from "react"
 
 function EditTaskModal({ selectedTask, plans, username, fetchTasks, resetSetTask }) {
   const appDispatch = useContext(DispatchContext)
-  const [taskUpdatedPlan, setTaskUpdatedPlan] = useState("not set")
+  const [taskUpdatedPlan, setTaskUpdatedPlan] = useState(false)
   const [taskNotes, setTaskNotes] = useState("")
 
   async function handleEditApplication() {
     const taskNewState = selectedTask.Task_state
 
     let taskNewPlan
-    taskUpdatedPlan === "not set" ? (taskNewPlan = selectedTask.Task_plan) : (taskNewPlan = taskUpdatedPlan)
+
+    if (selectedTask.Task_state === 2 || selectedTask.Task_state === 3 || selectedTask.Task_state === 4) {
+      taskNewPlan = selectedTask.Task_plan
+    } else {
+      if (taskUpdatedPlan || taskUpdatedPlan === "") {
+        taskNewPlan = taskUpdatedPlan
+      } else {
+        taskNewPlan = selectedTask.Task_plan
+      }
+    }
 
     let dateTime = new Date()
 
-    const taskNotesStarter = "==============================\n"
-    const taskNotesSignature = `\n------------------------------\nuserID: ${username}\nstate: ${["Open", "To-do", "Doing", "Done", "Closed"][taskNewState - 1]}\nDate/Time: ${dateTime}\n==============================\n`
-
-    const taskNotesComplete = taskNotesStarter + taskNotes + taskNotesSignature + selectedTask.Task_notes
+    const taskNotesComplete = `
+==============================
+Notes: ${taskNotes}
+------------------------------
+UserID: ${username}
+Action: Edit Task in ${["Open", "To-do", "Doing", "Done", "Closed"][taskNewState - 1]} State
+Date/Time: ${dateTime}
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+${selectedTask.Task_notes}`
 
     let taskOwner = username
     let taskID = selectedTask.Task_id
@@ -38,6 +52,8 @@ function EditTaskModal({ selectedTask, plans, username, fetchTasks, resetSetTask
         form.reset()
         fetchTasks()
         resetSetTask()
+        setTaskUpdatedPlan(false)
+        setTaskNotes("")
         return
       } else {
         appDispatch({ type: "errorToast", data: `No updates made to ${selectedTask.Task_id}` })
@@ -50,7 +66,7 @@ function EditTaskModal({ selectedTask, plans, username, fetchTasks, resetSetTask
   }
 
   function closeTaskModal() {
-    setTaskUpdatedPlan("not set")
+    setTaskUpdatedPlan(false)
     setTaskNotes("")
     var modal = document.getElementById("EditTaskModal")
     var form = modal.querySelector("form")
@@ -97,11 +113,12 @@ function EditTaskModal({ selectedTask, plans, username, fetchTasks, resetSetTask
                         onChange={e => {
                           setTaskUpdatedPlan(e.target.value)
                         }}
-                        disabled={!Boolean(selectedTask.Task_state === 1 || selectedTask.Task_state === 4)}
+                        disabled={Boolean(selectedTask.Task_state === 2 || selectedTask.Task_state === 3 || selectedTask.Task_state === 4)}
                         className="form-select"
                         id="planDropDownList"
                         style={{ width: "30vh" }}
                       >
+                        <option value="">No Plans Selected</option>
                         {plans.map(plan => {
                           return (
                             <option selected={selectedTask.Task_plan === plan.Plan_MVP_name} key={plan.Plan_MVP_name} value={plan.Plan_MVP_name}>
