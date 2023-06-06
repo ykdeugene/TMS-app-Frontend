@@ -40,7 +40,7 @@ ${selectedTask.Task_notes}`
 
     try {
       const response = await Axios.put(`/tms/update_task_status`, { taskNotesComplete, taskNewPlan, taskNewState, taskOwner, taskID })
-      if (response.data === "A100") {
+      if (response.data.result === "BSJ370") {
         appDispatch({ type: "loggedOut" })
         appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
         return
