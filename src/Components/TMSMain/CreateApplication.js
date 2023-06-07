@@ -23,7 +23,7 @@ function CreateApplication({ fetchApplication }) {
   async function fetchGroups() {
     try {
       const response = await Axios.get(`/all_groups`)
-      if (response.data === "A100") {
+      if (response.data.result === "BSJ370") {
         appDispatch({ type: "loggedOut" })
         appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
         return
@@ -54,7 +54,7 @@ function CreateApplication({ fetchApplication }) {
           setAppName("")
           setAppRNum("")
           fetchApplication()
-        } else if (response.data === "A100") {
+        } else if (response.data.result === "BSJ370") {
           appDispatch({ type: "loggedOut" })
           appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
         } else {
@@ -105,7 +105,7 @@ function CreateApplication({ fetchApplication }) {
           setAppDone("")
           fetchApplication()
           document.getElementById("createAppplicationForm").reset()
-        } else if (response.data === "A100") {
+        } else if (response.data.result === "BSJ370") {
           appDispatch({ type: "loggedOut" })
           appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
         } else {

@@ -16,10 +16,10 @@ function NavBarLoggedIn() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [username, setUsername] = useState("")
 
-  async function checkGroup(group_name) {
+  async function checkGroup(groupName) {
     try {
-      const response = await Axios.post(`/group/checkGroup`, { group_name })
-      setIsAdmin(response.data)
+      const response = await Axios.post(`/auth/checkgroup`, { groupName })
+      setIsAdmin(response.data.result)
     } catch (e) {
       console.log(e)
       appDispatch({ type: "errorToast", data: "Please contact an administrator." })
@@ -28,7 +28,7 @@ function NavBarLoggedIn() {
 
   async function getUsername() {
     try {
-      const response = await Axios.get(`/user/getusername`)
+      const response = await Axios.get(`/get/profile`)
       setUsername(response.data.username)
     } catch (e) {
       console.log(e)
@@ -37,7 +37,7 @@ function NavBarLoggedIn() {
   }
 
   useEffect(() => {
-    checkGroup("Admin")
+    checkGroup("admin")
     getUsername()
   })
 

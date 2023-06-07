@@ -15,13 +15,13 @@ function CreateGroup({ setUserTable }) {
     if (validation) {
       if (c_groupname !== "") {
         try {
-          const new_group = c_groupname.trim()
-          const response = await Axios.post("/group/create_group_admin", { new_group })
-          if (response.data === true) {
+          const groupName = c_groupname.trim()
+          const response = await Axios.post("/admin/update/creategroup", { groupName })
+          if (response.data.result === "true") {
             appDispatch({ type: "successToast", data: "New group is created." })
             setc_groupname("")
             setUserTable()
-          } else if (response.data === "A100") {
+          } else if (response.data.result === "BSJ370") {
             appDispatch({ type: "loggedOut" })
             appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
           } else {

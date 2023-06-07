@@ -37,7 +37,7 @@ function PlanBar({ plans, fetchPlans, permission }) {
     if (validation) {
       try {
         const response = await Axios.put(`/tms/update_plan`, { planName, applicationName, planEditColour, planEditEndDate, planEditStartDate })
-        if (response.data === "A100") {
+        if (response.data.result === "BSJ370") {
           appDispatch({ type: "loggedOut" })
           appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
           return

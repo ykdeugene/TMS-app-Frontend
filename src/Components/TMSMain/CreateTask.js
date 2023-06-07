@@ -34,7 +34,7 @@ Date/Time: ${dateTime}
           setTaskName("")
           fetchTasks()
           fetchApplication()
-        } else if (response.data === "A100") {
+        } else if (response.data.result === "BSJ370") {
           appDispatch({ type: "loggedOut" })
           appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
         } else {
@@ -80,7 +80,7 @@ Date/Time: ${dateTime}
           setTaskPlan("")
           fetchTasks()
           fetchApplication()
-        } else if (response.data === "A100") {
+        } else if (response.data.result === "BSJ370") {
           appDispatch({ type: "loggedOut" })
           appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
         } else {

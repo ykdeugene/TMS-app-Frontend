@@ -17,8 +17,8 @@ function LoginPage() {
       appDispatch({ type: "errorToast", data: "Invalid Username/Password." })
     } else {
       try {
-        const response = await Axios.post("user/login", { username, password })
-        if (response.data) {
+        const response = await Axios.post("/auth/login", { username, password })
+        if (response.data.result === "true") {
           appDispatch({ type: "loggedIn", data: response.data })
           appDispatch({ type: "successToast", data: "Welcome." })
           navigate("/")

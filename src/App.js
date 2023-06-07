@@ -13,11 +13,12 @@ import EditPage from "./Components/EditPage"
 import ErrorPage from "./Components/ErrorPage"
 import UserManagement from "./Components/UserManagement/UserManagement"
 import Testing from "./Components/testing"
+import Blank from "./Components/Blank"
 // Importing toast for notifications
 import { ToastContainer, toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 // Configuring Axios
-Axios.defaults.baseURL = "http://localhost:8080"
+Axios.defaults.baseURL = "http://localhost:6060"
 Axios.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("token")}`
 
 function App() {
@@ -27,27 +28,13 @@ function App() {
     token: localStorage.getItem("token")
   }
 
-  // Consistently check for user's identity
-  async function verifyUser() {
-    try {
-      const response = await Axios.get(`/user/verify`)
-      if (!response.data) {
-        dispatch({ type: "loggedOut" })
-        dispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
-      }
-    } catch (e) {
-      console.log(e)
-      dispatch({ type: "errorToast", data: "Please contact an administrator." })
-    }
-  }
-
   // Engine to run dispatch context in order to update values onto state context
   function ourReducer(draft, action) {
     switch (action.type) {
       case "loggedIn":
         draft.loggedIn = true
-        draft.token = action.data.token
-        Axios.defaults.headers.common["Authorization"] = `Bearer ${action.data.token}`
+        draft.token = action.data.jwt
+        Axios.defaults.headers.common["Authorization"] = `Bearer ${action.data.jwt}`
         return
       case "loggedOut":
         draft.loggedIn = false
@@ -68,10 +55,13 @@ function App() {
 
   const [isAdmin, setIsAdmin] = useState(false)
 
-  async function checkGroup(group_name) {
+  async function checkGroup(groupName) {
     try {
-      const response = await Axios.post(`/group/checkGroup`, { group_name })
-      setIsAdmin(response.data)
+      const response = await Axios.post(`/auth/checkgroup`, { groupName })
+      setIsAdmin(response.data.result)
+      if (response.data.result === "BSJ370") {
+        dispatch({ type: "loggedOut" })
+      }
     } catch (e) {
       console.log(e)
       dispatch({ type: "errorToast", data: "Please contact an administrator." })
@@ -81,10 +71,9 @@ function App() {
   const [state, dispatch] = useImmerReducer(ourReducer, initialState)
 
   useEffect(() => {
-    checkGroup("Admin")
+    checkGroup("admin")
     if (state.loggedIn) {
       localStorage.setItem("token", state.token)
-      verifyUser()
     } else {
       localStorage.removeItem("token")
       Axios.defaults.headers.common["Authorization"] = null
@@ -98,9 +87,10 @@ function App() {
           <NavBar />
           <Routes>
             <Route path="/testing" element={<Testing />} />
-            <Route path="/" element={state.loggedIn ? <TMSMain verifyUser={verifyUser} /> : <LoginPage />} />
+            <Route path="/" element={state.loggedIn ? <Blank /> : <LoginPage />} />
+            {/* <Route path="/" element={state.loggedIn ? <TMSMain /> : <LoginPage />} /> */}
             <Route path="/edit" element={state.loggedIn ? <EditPage /> : <LoginPage />} />
-            <Route path="/main" element={state.loggedIn ? isAdmin ? <UserManagement verifyUser={verifyUser} /> : <ErrorPage /> : <LoginPage />} />
+            <Route path="/main" element={state.loggedIn ? isAdmin ? <UserManagement /> : <ErrorPage /> : <LoginPage />} />
           </Routes>
           <ToastContainer position="bottom-right" autoClose={1250} />
         </BrowserRouter>

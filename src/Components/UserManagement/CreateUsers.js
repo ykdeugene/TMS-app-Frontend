@@ -8,26 +8,30 @@ function CreateUsers({ setUserTable }) {
   const appDispatch = useContext(DispatchContext)
   // function for create user button
   // for creating new users
-  const [c_username, setc_username] = useState("")
-  const [c_password, setc_password] = useState("")
-  const [c_email, setc_email] = useState("")
+  const [username, setusername] = useState("")
+  const [password, setpassword] = useState("")
+  const [email, setemail] = useState("")
+  const [activeStatus, setactiveStatus] = useState(1)
 
   async function handleCreateUser() {
+    console.log("email: " + email)
     let email_checker = true
-    if (c_email) {
-      email_checker = validator.isEmail(c_email)
+    if (email) {
+      email_checker = validator.isEmail(email)
     }
 
-    if (validator.isAlphanumeric(c_username) && validatePassword(c_password) && email_checker) {
+    if (validator.isAlphanumeric(username) && validatePassword(password) && email_checker) {
       try {
-        const response = await Axios.post("/user/create_user_admin", { c_username, c_password, c_email })
-        if (response.data === true) {
+        const response = await Axios.post("/admin/update/createuser", { username, password, email, activeStatus })
+        console.log(response.data)
+        if (response.data.result === "true") {
           appDispatch({ type: "successToast", data: "New user is created." })
-          setc_username("")
-          setc_password("")
-          setc_email("")
+          setusername("")
+          setpassword("")
+          setemail("")
+          setactiveStatus(1)
           setUserTable()
-        } else if (response.data === "A100") {
+        } else if (response.data.result === "BSJ370") {
           appDispatch({ type: "loggedOut" })
           appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
         } else {
@@ -46,13 +50,25 @@ function CreateUsers({ setUserTable }) {
     <div>
       <h2 className="p-2">Create User</h2>
       <div className="col-10">
-        <div className="input-group">
-          <input onChange={e => setc_username(e.target.value)} value={c_username} placeholder="Username" name="username" type="text" className="form-control" />
-          <input onChange={e => setc_password(e.target.value)} value={c_password} placeholder="Password" type="password" className="form-control" />
-          <input onChange={e => setc_email(e.target.value)} value={c_email} placeholder="Email" type="text" className="form-control" />
-          <button onClick={handleCreateUser} className="btn btn-primary" type="button">
-            Create
-          </button>
+        <div className="d-flex">
+          <input
+            className="me-2"
+            type="checkbox"
+            defaultChecked
+            value={activeStatus}
+            onChange={e => {
+              e.target.checked ? setactiveStatus(1) : setactiveStatus(0)
+            }}
+          />
+          {activeStatus === 1 ? <label className="align-self-center">Active</label> : <label className="align-self-center">Inactive</label>}
+          <div className="input-group ms-2">
+            <input onChange={e => setusername(e.target.value)} value={username} placeholder="Username" name="username" type="text" className="form-control" />
+            <input onChange={e => setpassword(e.target.value)} value={password} placeholder="Password" type="password" className="form-control" />
+            <input onChange={e => setemail(e.target.value)} value={email} placeholder="Email" type="text" className="form-control" />
+            <button onClick={handleCreateUser} className="btn btn-primary" type="button">
+              Create
+            </button>
+          </div>
         </div>
       </div>
     </div>

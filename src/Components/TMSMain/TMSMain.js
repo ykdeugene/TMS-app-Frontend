@@ -26,7 +26,7 @@ function TMSMain() {
 
   async function getUsername() {
     try {
-      const response = await Axios.get(`/user/getusername`)
+      const response = await Axios.get(`/get/profile`)
       setUsername(response.data.username)
     } catch (e) {
       console.log(e)
@@ -37,7 +37,7 @@ function TMSMain() {
   async function fetchApplication() {
     try {
       const response = await Axios.get(`/tms/applications`)
-      if (response.data === "A100") {
+      if (response.data.result === "BSJ370") {
         appDispatch({ type: "loggedOut" })
         appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
         return
@@ -55,7 +55,7 @@ function TMSMain() {
   async function fetchGroups() {
     try {
       const response = await Axios.get(`/all_groups`)
-      if (response.data === "A100") {
+      if (response.data.result === "BSJ370") {
         appDispatch({ type: "loggedOut" })
         appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
         return
@@ -74,7 +74,7 @@ function TMSMain() {
     let applicationName = selectedApp.App_Acronym
     try {
       const response = await Axios.post(`/tms/plans`, { applicationName })
-      if (response.data === "A100") {
+      if (response.data.result === "BSJ370") {
         appDispatch({ type: "loggedOut" })
         appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
         return
@@ -93,7 +93,7 @@ function TMSMain() {
     let applicationName = selectedApp.App_Acronym
     try {
       const response = await Axios.post(`/tms/tasks`, { applicationName })
-      if (response.data === "A100") {
+      if (response.data.result === "BSJ370") {
         appDispatch({ type: "loggedOut" })
         appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
         return
@@ -144,7 +144,7 @@ function TMSMain() {
     if (validation) {
       try {
         const response = await Axios.put(`/tms/update_application`, { description, startDate, endDate, create, open, toDo, doing, done, appName })
-        if (response.data === "A100") {
+        if (response.data.result === "BSJ370") {
           appDispatch({ type: "loggedOut" })
           appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
           return

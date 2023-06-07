@@ -8,14 +8,15 @@ function EditPage() {
   const appDispatch = useContext(DispatchContext)
 
   const [username, setUsername] = useState("")
+  const [userEmail, setUserEmail] = useState("")
   const [password, setPassword] = useState("")
   const [email, setEmail] = useState("")
   const [groups, setGroups] = useState([])
 
   async function getUsername() {
     try {
-      const response = await Axios.get(`/user/getusername`)
-      if (response.data === "A100") {
+      const response = await Axios.get(`/get/profile`)
+      if (response.data.result === "BSJ370") {
         appDispatch({ type: "loggedOut" })
         appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
         return
@@ -24,6 +25,7 @@ function EditPage() {
         return
       }
       setUsername(response.data.username)
+      setUserEmail(response.data.email)
     } catch (e) {
       appDispatch({ type: "errorToast", data: "Please contact an administrator." })
     }
@@ -31,8 +33,8 @@ function EditPage() {
 
   // function to get user's group
   async function fetchGroups() {
-    const response = await Axios.get("/group/user")
-    if (response.data === "A100") {
+    const response = await Axios.get("/get/group")
+    if (response.data.result === "BSJ370") {
       appDispatch({ type: "loggedOut" })
       appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
       return
@@ -52,8 +54,8 @@ function EditPage() {
   async function updatePassword() {
     if (validatePassword(password)) {
       try {
-        const response = await Axios.put("/user/update_password", { password })
-        if (response.data) {
+        const response = await Axios.post("/update/pwd", { password })
+        if (response.data.result === "true") {
           appDispatch({ type: "successToast", data: "Password is updated." })
           setPassword("")
         } else {
@@ -75,10 +77,11 @@ function EditPage() {
   async function updateEmail() {
     if (validator.isEmail(email)) {
       try {
-        const response = await Axios.put("/user/update_email", { email })
-        if (response.data) {
+        const response = await Axios.post("/update/email", { email })
+        if (response.data.result === "true") {
           appDispatch({ type: "successToast", data: "Email is updated." })
           setEmail("")
+          getUsername()
         } else {
           appDispatch({ type: "errorToast", data: "Please contact an administrator." })
           setEmail("")
@@ -111,9 +114,9 @@ function EditPage() {
             </div>
           </div>
           <div className="form-group">
-            <label className="control-label">Update Email:</label>
+            <label className="control-label">Update email:</label>
             <div className="col input-group">
-              <input value={email} placeholder="New Email" onChange={e => setEmail(e.target.value)} type="text" className="form-control" />
+              <input value={email} placeholder={userEmail} onChange={e => setEmail(e.target.value)} type="text" className="form-control" />
               <button onClick={updateEmail} className="btn btn-primary" type="button">
                 Update
               </button>
@@ -124,7 +127,7 @@ function EditPage() {
             <div className="col">
               <select multiple className="form-control">
                 {groups.map(item => {
-                  return <option key={item.group_name}>{item.group_name}</option>
+                  return <option key={item.groupName}>{item.groupName}</option>
                 })}
               </select>
             </div>

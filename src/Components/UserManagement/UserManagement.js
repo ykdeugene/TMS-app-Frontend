@@ -19,8 +19,9 @@ function UserManagement() {
   async function setUserTable() {
     // get group data
     try {
-      const response = await Axios.get(`/groups`)
-      if (response.data === "A100") {
+      const response = await Axios.get(`/admin/get/allgroup`)
+
+      if (response.data.result === "BSJ370") {
         appDispatch({ type: "loggedOut" })
         appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
         return
@@ -29,32 +30,33 @@ function UserManagement() {
         return
       }
       const processedData = []
-      response.data.groups.forEach(group => {
+      response.data.forEach(group => {
         const existingUser = processedData.find(user => user.username === group.username)
 
         if (existingUser) {
           // If the user already exists, add the current group name to their list of groups
-          existingUser.group_name.push(group.group_name)
+          existingUser.groupName.push(group.groupName)
         } else {
           // If the user doesn't exist, create a new object for them and add their username and group name
           processedData.push({
             username: group.username,
-            group_name: [group.group_name]
+            groupName: [group.groupName]
           })
         }
       })
-      setGroupList(processedData[0].group_name)
+
+      setGroupList(processedData[0].groupName)
 
       const for_options = []
 
       processedData.forEach(user => {
         const options = []
-        user.group_name.forEach(group => {
+        user.groupName.forEach(group => {
           options.push({
             value: group,
             label: group,
             usernameInState: username,
-            isFixed: group === "Admin" && (user.username === username || user.username === "admin")
+            isFixed: group === "admin" && (user.username === username || user.username === "admin")
           })
         })
         for_options.push({ username: user.username, groups: options })
@@ -64,10 +66,11 @@ function UserManagement() {
       console.log(e)
       appDispatch({ type: "errorToast", data: "Please contact an administrator." })
     }
+
     // get users data
     try {
-      const response = await Axios.get(`/users`)
-      if (response.data === "A100") {
+      const response = await Axios.get(`/admin/get/allprofile`)
+      if (response.data.result === "BSJ370") {
         appDispatch({ type: "loggedOut" })
         appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
         return
@@ -75,7 +78,7 @@ function UserManagement() {
         appDispatch({ type: "errorToast", data: "Please contact an administrator." })
         return
       }
-      setUsers(response.data.users)
+      setUsers(response.data)
     } catch (e) {
       console.log(e)
       appDispatch({ type: "errorToast", data: "Please contact an administrator." })
@@ -84,7 +87,7 @@ function UserManagement() {
 
   async function getUsername() {
     try {
-      const response = await Axios.get(`/user/getusername`)
+      const response = await Axios.get(`/get/profile`)
       setUsername(response.data.username)
     } catch (e) {
       console.log(e)
@@ -119,14 +122,13 @@ function UserManagement() {
   }
 
   // function to update password
-  async function handleUpdatePassword(u_password, u_username) {
-    if (validatePassword(u_password)) {
+  async function handleUpdatePassword(password, username) {
+    if (validatePassword(password)) {
       try {
-        const response = await Axios.put("/user/update_password_admin", { u_password, u_username })
-        console.log(response.data)
-        if (response.data === true) {
-          appDispatch({ type: "successToast", data: `password is updated for ${u_username}` })
-        } else if (response.data === "A100") {
+        const response = await Axios.post("/admin/update/pwd", { password, username })
+        if (response.data.result === "true") {
+          appDispatch({ type: "successToast", data: `password is updated for ${username}` })
+        } else if (response.data.result === "BSJ370") {
           appDispatch({ type: "loggedOut" })
           appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
         } else {
@@ -141,12 +143,13 @@ function UserManagement() {
   }
 
   // function to update email
-  async function handleUpdateEmail(u_email, u_username) {
+  async function handleUpdateEmail(email, username) {
     try {
-      const response = await Axios.put("/user/update_email_admin", { u_email, u_username })
-      if (response.data === true) {
-        appDispatch({ type: "successToast", data: `Email is updated for ${u_username}` })
-      } else if (response.data === "A100") {
+      const response = await Axios.post("/admin/update/email", { email, username })
+      console.log(response.data)
+      if (response.data.result === "true") {
+        appDispatch({ type: "successToast", data: `Email is updated for ${username}` })
+      } else if (response.data.result === "BSJ370") {
         appDispatch({ type: "loggedOut" })
         appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
       } else {
@@ -159,17 +162,19 @@ function UserManagement() {
   }
 
   // function to update active status
-  async function handleUpdateActive(u_activestatus, u_username) {
+  async function handleUpdateActive(activeStatus, username) {
     try {
-      const response = await Axios.put("/user/update_activeStatus_admin", { u_activestatus, u_username })
+      console.log(activeStatus)
+      const response = await Axios.post("/admin/update/activestatus", { activeStatus, username })
+      console.log(response.data)
 
-      if (response.data === true) {
-        if (u_activestatus) {
-          appDispatch({ type: "successToast", data: `${u_username} has been activated.` })
+      if (response.data.result === "true") {
+        if (activeStatus) {
+          appDispatch({ type: "successToast", data: `${username} has been activated.` })
         } else {
-          appDispatch({ type: "successToast", data: `${u_username} has been deactivated` })
+          appDispatch({ type: "successToast", data: `${username} has been deactivated` })
         }
-      } else if (response.data === "A100") {
+      } else if (response.data.result === "BSJ370") {
         appDispatch({ type: "loggedOut" })
         appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
       } else {
@@ -181,12 +186,13 @@ function UserManagement() {
   }
 
   // function to add user to group
-  async function handleGroupSelect(u_group_name, u_username) {
+  async function handleGroupSelect(groupName, username) {
     try {
-      const response = await Axios.post("/group/add_user_to_group_admin", { u_group_name, u_username })
-      if (response.data === true) {
-        appDispatch({ type: "successToast", data: `${u_username} has been added to ${u_group_name}` })
-      } else if (response.data === "A100") {
+      const addOrRemove = "add"
+      const response = await Axios.post("/admin/update/group", { groupName, username, addOrRemove })
+      if (response.data.result === "true") {
+        appDispatch({ type: "successToast", data: `${username} has been added to ${groupName}` })
+      } else if (response.data.result === "BSJ370") {
         appDispatch({ type: "loggedOut" })
         appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
       } else {
@@ -198,12 +204,13 @@ function UserManagement() {
   }
 
   // function to remove user from group
-  async function handleGroupRemove(u_group_name, u_username) {
+  async function handleGroupRemove(groupName, username) {
     try {
-      const response = await Axios.post("/group/rmv_user_fr_group_admin", { u_group_name, u_username })
-      if (response.data === true) {
-        appDispatch({ type: "successToast", data: `${u_username} has been removed from ${u_group_name}` })
-      } else if (response.data === "A100") {
+      const addOrRemove = "remove"
+      const response = await Axios.post("/admin/update/group", { groupName, username, addOrRemove })
+      if (response.data.result === "true") {
+        appDispatch({ type: "successToast", data: `${username} has been removed from ${groupName}` })
+      } else if (response.data.result === "BSJ370") {
         appDispatch({ type: "loggedOut" })
         appDispatch({ type: "errorToast", data: "Token expired. You have been logged out." })
       } else {
@@ -302,7 +309,7 @@ function UserManagement() {
                           if (e.target.value !== user.email && validator.isEmail(e.target.value)) {
                             handleUpdateEmail(e.target.value, user.username)
                           } else if (e.target.value !== user.email && e.target.value === "") {
-                            handleUpdateEmail(e.target.value, user.username)
+                            handleUpdateEmail(null, user.username)
                           } else {
                             e.target.value = user.email
                             appDispatch({ type: "errorToast", data: "Email not updated. Please check input again." })
@@ -333,10 +340,10 @@ function UserManagement() {
                   <td style={{ paddingLeft: "30px", paddingTop: "15px" }}>
                     <input
                       onChange={e => {
-                        handleUpdateActive(e.target.checked, user.username)
+                        e.target.checked === true ? handleUpdateActive(1, user.username) : handleUpdateActive(0, user.username)
                       }}
                       type="checkbox"
-                      defaultChecked={user.active_status}
+                      defaultChecked={user.activeStatus}
                       disabled={user.username === "admin" || user.username === username}
                     />
                   </td>
